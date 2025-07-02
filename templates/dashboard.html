@@ -1,0 +1,110 @@
+<!-- templates/dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block head_extra %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+{% endblock %}
+
+{% block content %}
+    <h1>📊 Skill Tracker Dashboard</h1>
+
+    <div id="dashboard-content">
+        <div class="chart-container">
+            <canvas id="daysChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <canvas id="topicChart"></canvas>
+        </div>
+        <p id="streakText"></p>
+        <p id="currentStreakText"></p>
+    </div>
+
+    <!-- For loading and error states -->
+    <div id="loading-state" class="status-message">Loading dashboard data...</div>
+    <div id="error-state" class="status-message hidden">Failed to load data. Please try again later.</div>
+
+    <script>
+      // Self-invoking async function to use await
+      (async () => {
+        const dashboardContent = document.getElementById('dashboard-content');
+        const loadingState = document.getElementById('loading-state');
+        const errorState = document.getElementById('error-state');
+
+        // Hide content, show loading indicator
+        dashboardContent.classList.add('hidden');
+        loadingState.classList.remove('hidden');
+        errorState.classList.add('hidden');
+
+        try {
+          const response = await fetch('/analytics_data');
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+
+          // Create charts and update text
+          createDaysChart(data.dates, data.dailyLogs);
+          createTopicChart(data.topicCounts);
+          document.getElementById('streakText').innerText = `🔥 Longest Streak: ${data.longestStreak} days`;
+          document.getElementById('currentStreakText').innerText = `⚡ Current Streak: ${data.currentStreak} days`;
+
+          // Show content, hide loading indicator
+          dashboardContent.classList.remove('hidden');
+          loadingState.classList.add('hidden');
+
+        } catch (error) {
+          console.error('Error fetching analytics data:', error);
+          // Show error message, hide loading indicator
+          errorState.classList.remove('hidden');
+          loadingState.classList.add('hidden');
+        }
+      })();
+
+      function createDaysChart(labels, data) {
+        const ctx = document.getElementById('daysChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Logged Days',
+              data: data,
+              backgroundColor: '#00ff87' // Could use CSS variables here
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: { display: true, text: 'Daily Log Frequency' }
+            },
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      }
+
+      function createTopicChart(topicData) {
+        const ctx = document.getElementById('topicChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'pie',
+          data: {
+            labels: Object.keys(topicData),
+            datasets: [{
+              label: 'Topic Frequency',
+              data: Object.values(topicData),
+              backgroundColor: ['#00e676', '#1de9b6', '#64ffda', '#69f0ae', '#76ff03']
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: { display: true, text: 'Topic Distribution' }
+            }
+          }
+        });
+      }
+    </script>
+{% endblock %}

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cycerzzz's Daily Skill-Building Dashboard</title>
+    <style>
+        /* --- Global Styles & Dark Theme --- */
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-text: #e0e0e0;
+            --secondary-text: #a0a0a0;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-orange: #e67e22;
+            --border-color: #333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            gap: 24px;
+        }
+
+        /* --- Typography & Links --- */
+        h1, h2, h3 {
+            margin-top: 0;
+            color: white;
+            font-weight: 600;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            color: var(--accent-green);
+            margin-bottom: 5px;
+        }
+        
+        h1 + p {
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--secondary-text);
+            margin-top: 0;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            border-bottom: 2px solid var(--accent-blue);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        a:hover {
+            color: var(--accent-green);
+            text-decoration: underline;
+        }
+        
+        code {
+            background-color: #2c2c2c;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+        }
+
+        /* --- Card Layout --- */
+        .card {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* --- Interactive Checklist --- */
+        .task-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .task-list li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        .task-list input[type="checkbox"] {
+            display: none; /* Hide default checkbox */
+        }
+        .task-list label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .task-list label::before {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent-blue);
+            border-radius: 4px;
+            margin-right: 15px;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .task-list input[type="checkbox"]:checked + label::before {
+            background-color: var(--accent-green);
+            border-color: var(--accent-green);
+            content: '✔';
+            color: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .task-list input[type="checkbox"]:checked + label .task-text {
+            text-decoration: line-through;
+            color: var(--secondary-text);
+        }
+        .task-time {
+            margin-left: auto;
+            background-color: #2c2c2c;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: var(--secondary-text);
+        }
+
+        /* --- Tables --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: #2c2c2c;
+            font-weight: 600;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #222;
+        }
+        tr:hover {
+            background-color: #2a2a2a;
+        }
+
+        /* --- Progress Bars --- */
+        .progress-tracker {
+            margin-bottom: 20px;
+        }
+        .progress-tracker h3 {
+            margin-bottom: 8px;
+        }
+        .progress-tracker .target {
+             color: var(--secondary-text);
+             font-size: 0.9rem;
+        }
+        progress {
+            width: 100%;
+            height: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+        progress::-webkit-progress-bar {
+            background-color: #2c2c2c;
+        }
+        progress::-webkit-progress-value {
+            background: linear-gradient(90deg, var(--accent-orange), var(--accent-green));
+            border-radius: 6px;
+            transition: width 0.5s ease-out;
+        }
+        
+        /* --- Lists & Callouts --- */
+        .styled-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        .styled-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        .styled-list li::before {
+            content: "🔥";
+            margin-right: 10px;
+        }
+
+        .callout {
+            background-color: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid var(--accent-green);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+        }
+        .callout h3 {
+            color: var(--accent-green);
+        }
+        .callout ul {
+            padding-left: 20px;
+        }
+        .callout ul li::marker {
+            content: "💡 ";
+        }
+        
+        /* --- NEW: Encouragement & Footer Styles --- */
+        .encouragement-card {
+            text-align: center;
+            background: linear-gradient(145deg, #1a1a1a, #242424);
+        }
+        .encouragement-card h3 {
+            font-size: 1.8rem;
+            color: var(--accent-blue);
+        }
+        .encouragement-card .final-word {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-green);
+            margin-top: 20px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--secondary-text);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Cycerzzz's Daily Grind</h1>
+        <p>Your personalized dashboard for Python and Cybersecurity skill-building.</p>
+        
+        <!-- Daily Routine -->
+        <div class="card full-width">
+            <h2>🧭 Daily Routine (1–3 hrs/day)</h2>
+            <ul class="task-list">
+                <li>
+                    <input type="checkbox" id="task1">
+                    <label for="task1">
+                        <span class="task-text">🧠 Python Practice (3–5 problems or 1 topic)</span>
+                        <span class="task-time">45–60 mins</span>
+                    </label>
+                </li>
+                <li>
+                    <input type="checkbox" id="task2">
+                    <label for="task2">
+                        <span class="task-text">🔐 HTB Box (1 box every 2 days)</span>
+                        <span class="task-time">1–2 hrs</span>
+                    </label>
+                </li>
+                <li>
+                    <input type="checkbox" id="task3">
+                    <label for="task3">
+                        <span class="task-text"> shell-fu OverTheWire (1–2 levels)</span>
+                        <span class="task-time">15–30 mins</span>
+                    </label>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="grid-container">
+            <!-- OverTheWire Goal -->
+            <div class="card">
+                <h2>🎯 OverTheWire: Bandit</h2>
+                <div class="progress-tracker">
+                    <h3>Progress</h3>
+                    <progress id="bandit-progress" value="5" max="27"></progress>
+                    <div class="target">Target: Finish levels 0 to 26 in 10–14 days</div>
+                </div>
+                <table>
+                    <thead><tr><th>Level Range</th><th>What You’ll Learn</th></tr></thead>
+                    <tbody>
+                        <tr><td>0–5</td><td>Basic Linux commands (<code>ls</code>, <code>cat</code>, <code>cd</code>, <code>file</code>)</td></tr>
+                        <tr><td>6–14</td><td>Redirects, hidden files, pipes, base64, SSH</td></tr>
+                        <tr><td>15–26</td><td>Bash tricks, crons, symlinks, SUID, networking</td></tr>
+                    </tbody>
+                </table>
+                 <p style="text-align:center; margin-top:20px;">
+                    <a href="https://overthewire.org/wargames/bandit/" target="_blank"><strong>🔗 Start Bandit Wargame →</strong></a>
+                </p>
+            </div>
+
+            <!-- HTB Boxes Plan -->
+            <div class="card">
+                <h2>🛠️ HTB Boxes Plan</h2>
+                 <div class="progress-tracker">
+                    <h3>Weekly Goal</h3>
+                    <progress id="htb-progress" value="1" max="4"></progress>
+                    <div class="target">Target: 3–4 easy boxes per week</div>
+                </div>
+                <h3>🔥 Beginner-Friendly Boxes:</h3>
+                <ul class="styled-list">
+                    <li>Lame</li>
+                    <li>Jerry</li>
+                    <li>Blue</li>
+                    <li>Legacy</li>
+                    <li>Optimum</li>
+                    <li>Dancing</li>
+                    <li>Bashed</li>
+                </ul>
+                <p style="text-align:center; margin-top:20px;">
+                    <a href="https://app.hackthebox.com/starting-point" target="_blank"><strong>🔗 Go to HTB Starting Point →</strong></a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Python Resources -->
+        <div class="card full-width">
+            <h2>🧠 Top Python Practice Platforms</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Platform</th>
+                        <th>Why It’s Great</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><a href="https://leetcode.com" target="_blank">🟢 LeetCode</a></td><td>Best for job DSA + Python problem solving (start with easy)</td></tr>
+                    <tr><td><a href="https://exercism.io/tracks/python" target="_blank">🟢 Exercism</a></td><td>Mentor-guided + beginner to advanced Python challenges</td></tr>
+                    <tr><td><a href="https://edabit.com/challenges/python3" target="_blank">🟡 Edabit</a></td><td>Great for quick, fun Python problems</td></tr>
+                    <tr><td><a href="https://codingbat.com/python" target="_blank">🟠 CodingBat</a></td><td>Old school, simple challenges (good for logic warm-up)</td></tr>
+                    <tr><td><a href="https://www.codewars.com/kata/latest/?language=python" target="_blank">🔵 Codewars</a></td><td>Ranked problems, strong community</td></tr>
+                    <tr><td><a href="https://www.interviewbit.com/practice/python/" target="_blank">🟢 InterviewBit (Python)</a></td><td>Focused on interview prep, nice UI</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="grid-container">
+            <!-- Weekly Python Topics -->
+            <div class="card">
+                <h2>✍️ Suggested Weekly Python Topics</h2>
+                <table>
+                    <thead><tr><th>Week</th><th>Focus Area</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td>Strings, lists, dicts, loops, conditions</td></tr>
+                        <tr><td>2</td><td>Functions, OOP (classes, inheritance)</td></tr>
+                        <tr><td>3</td><td>File I/O, error handling, modules</td></tr>
+                        <tr><td>4</td><td>APIs (<code>requests</code>), JSON, regex, CLI tools</td></tr>
+                        <tr><td>5</td><td>Pandas, Excel (<code>openpyxl</code>), CSV handling</td></tr>
+                        <tr><td>6</td><td>Automation scripts (files, network, cron tasks)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tips to Grow Fast -->
+            <div class="card callout">
+                <h3>💡 Tips to Grow Fast</h3>
+                <ul>
+                    <li>Keep a daily log in Notion or markdown.</li>
+                    <li>Push all projects + writeups to GitHub.</li>
+                    <li>Try explaining solutions to a friend (or rubber ducky).</li>
+                    <li>Join 1–2 Discords for accountability.</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- NEW: Encouragement Section -->
+        <div class="card full-width encouragement-card">
+            <h3>🚀 Stay Consistent, Stay Curious</h3>
+            <p>This dashboard is your map, but consistency is the engine. Every problem solved and every level cleared is a concrete step forward. You're not just learning commands; you're building a mindset.</p>
+            <p class="final-word">Keep pushing boundaries. The skills you build today will open doors tomorrow.</p>
+        </div>
+
+    </div>
+
+    <!-- NEW: Footer Section -->
+    <footer>
+        © 2025 Cycerzzz. All Rights Reserved.
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tasks = document.querySelectorAll('.task-list input[type="checkbox"]');
+
+            // Load saved task states from localStorage
+            tasks.forEach(task => {
+                const isChecked = localStorage.getItem(task.id) === 'true';
+                task.checked = isChecked;
+            });
+
+            // Save task state on change
+            tasks.forEach(task => {
+                task.addEventListener('change', (e) => {
+                    localStorage.setItem(e.target.id, e.target.checked);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

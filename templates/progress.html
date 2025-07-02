@@ -1,0 +1,31 @@
+<!-- templates/progress.html -->
+{% extends "base.html" %}
+
+{% block title %}My Progress Log{% endblock %}
+
+{% block content %}
+    <h1>📘 My Progress Log</h1>
+
+    {% for entry in logs %}
+        <section class="task-section" aria-labelledby="date-{{ loop.index }}">
+            <h3 id="date-{{ loop.index }}">{{ entry.date }}</h3>
+            {% if entry.notes %}
+                <p><strong>Notes:</strong> {{ entry.notes }}</p>
+            {% endif %}
+            <ul>
+                {% for key, val in entry.completed_tasks.items() %}
+                    <li>
+                        <strong>{{ key|capitalize }}:</strong>
+                        {{ val.task }} 
+                        {% if val.done %}<span role="img" aria-label="Completed">✅</span>{% endif %}
+                        {% if val.extra %}
+                            <p class="extra-notes">➕ <strong>Extra:</strong> {{ val.extra }}</p>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% else %}
+        <p>No progress logs found. Start logging to see your progress here!</p>
+    {% endfor %}
+{% endblock %}

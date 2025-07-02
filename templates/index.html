@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Tracker</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="nav-links">
+        <a href="/dashboard">📊 Dashboard</a> |
+        <a href="/progress">📘 Progress</a> |
+        <a href="/tracker">📅 Tracker</a> |
+        <a href="/ctf">🐞 CTF</a>
+    </div>
+
+    <div class="container">
+        <h1>What's on your mind🤪</h1>
+        <div id="streak-badge" class="hidden"></div>
+
+        <div class="header">
+            <input type="text" id="calendar" placeholder="Select a date...">
+        </div>
+
+        <div id="daily-log">
+            <h2>🗓️ Today's Log - <span id="current-date"></span></h2>
+
+            <!-- Python Section -->
+            <div class="task-section">
+                <h3>🐍 Python Practice</h3>
+                <input type="text" id="python-task" class="task-input" placeholder="What Python skill did you practice?">
+                <button class="ai-button" data-topic="Python">💡 Get AI Suggestion</button>
+                <button class="suggest-today-button" data-topic="Python">📌 What should I learn today?</button>
+                <input type="checkbox" class="completion-checkbox"> Mark as completed
+                <input type="text" class="extra-topic" placeholder="➕ Extra topic learned? (optional)">
+            </div>
+
+            <!-- HTB Section -->
+            <div class="task-section">
+                <h3>🧠 Hack The Box / CTF</h3>
+                <input type="text" id="htb-task" class="task-input" placeholder="Which challenge did you solve?">
+                <button class="ai-button" data-topic="Hack The Box">💡 Get AI Suggestion</button>
+                <button class="suggest-today-button" data-topic="Hack The Box">📌 What should I learn today?</button>
+                <input type="checkbox" class="completion-checkbox"> Mark as completed
+                <input type="text" class="extra-topic" placeholder="➕ Extra topic learned? (optional)">
+            </div>
+
+            <!-- OTW Section -->
+            <div class="task-section">
+                <h3>💻 OverTheWire / Shell Practice</h3>
+                <input type="text" id="otw-task" class="task-input" placeholder="What wargame did you attempt?">
+                <button class="ai-button" data-topic="Linux & Shell">💡 Get AI Suggestion</button>
+                <button class="suggest-today-button" data-topic="Linux & Shell">📌 What should I learn today?</button>
+                <input type="checkbox" class="completion-checkbox"> Mark as completed
+                <input type="text" class="extra-topic" placeholder="➕ Extra topic learned? (optional)">
+            </div>
+
+            <!-- Suggestion Box -->
+            <div id="ai-suggestion-box" class="hidden">
+                <h4>🤖 AI Recommends:</h4>
+                <p id="ai-suggestion-text"></p>
+            </div>
+
+            <!-- Notes -->
+            <h3>📝 Notes / Key Learnings</h3>
+            <textarea id="notes" placeholder="Add links, commands, ideas, or personal reflections..."></textarea>
+
+            <button id="save-log-btn">💾 Save My Progress</button>
+            <p id="status-message"></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="{{ url_for('static', filename='tracker.js') }}"></script>
+</body>
+</html>
