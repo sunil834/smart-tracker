@@ -1,8 +1,9 @@
-# gemini.py
-import os, json
+# gemini.py (Modified)
+
+import os
 import google.generativeai as genai
 from dotenv import load_dotenv
-from tracker_memory import get_recent_progress, update_topic_history
+# No longer imports from tracker_memory
 
 load_dotenv()
 
@@ -12,10 +13,10 @@ def configure_api():
         raise ValueError("GEMINI_API_KEY not found.")
     genai.configure(api_key=api_key)
 
-def get_ai_suggestion(topic, previous_learning):
+# The function now accepts 'history' as an argument
+def get_ai_suggestion(topic, previous_learning, history):
     configure_api()
     model = genai.GenerativeModel('gemini-1.5-flash')
-    history = get_recent_progress(topic)
     recent = " -> ".join(history) if history else "None yet"
     prompt = f"""
     You are a cybersecurity mentor. Topic: {topic}.
@@ -25,19 +26,18 @@ def get_ai_suggestion(topic, previous_learning):
     """
     try:
         response = model.generate_content(prompt)
-        update_topic_history(topic, previous_learning)
+        # The responsibility of updating history is now in app.py
         return response.text.strip()
     except Exception as e:
         print("Error:", e)
         return "Could not generate."
 
-def get_next_step(topic, level="Basic"): # Add level as an argument
+# The function now accepts 'history' as an argument
+def get_next_step(topic, history, level="Basic"):
     configure_api()
-    model = genai.GenerativeModel('models/gemini-2.5-flash') 
-    history = get_recent_progress(topic)
+    # You might need to adjust the model name based on availability
+    model = genai.GenerativeModel('gemini-1.5-flash') 
     recent = " -> ".join(history) if history else "None yet"
-
-    # A more detailed prompt that guides the AI on difficulty levels
     prompt = f"""
     As a Python mentor, provide a learning task for a student.
 
@@ -67,8 +67,7 @@ def get_next_step(topic, level="Basic"): # Add level as an argument
             response = model.generate_content(prompt)
             suggestion = response.text.strip()
             if suggestion and suggestion not in seen:
-                # We save the suggestion to history with its level so it's not repeated
-                update_topic_history(topic, f"({level}) {suggestion}")
+                # The responsibility of updating history is now in app.py
                 return suggestion
         except Exception as e:
             print("Error generating next step:", e)

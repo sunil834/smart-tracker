@@ -1,67 +1,102 @@
-# app.py
-from flask import Flask, render_template, request, jsonify
+# app.py (Refactored for PostgreSQL)
+
 import os
-import json
-from datetime import datetime
+from datetime import datetime, date
+from flask import Flask, render_template, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import JSON
+import json # Still needed for processing request data
+
 # Centralized imports from your custom modules
+# We pass history to gemini now, so no direct db access is needed there
 from gemini import get_ai_suggestion, get_next_step
-from tracker_memory import get_all_history, update_topic_history
 
+# --- Basic App and Database Setup ---
 app = Flask(__name__)
-LOGS_DIR = "tracker_logs"
 
-# Ensure the log directory exists
-if not os.path.exists(LOGS_DIR):
-    os.makedirs(LOGS_DIR)
+# This securely reads the DATABASE_URL environment variable you set in Render
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+
+# --- Database Models ---
+# Replaces the individual .json files in the tracker_logs/ directory
+class DailyLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    log_date = db.Column(db.Date, unique=True, nullable=False, index=True)
+    notes = db.Column(db.Text, nullable=True)
+    completed_tasks = db.Column(JSON)
+
+# Replaces the tracker_memory.json file
+class TopicHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    topic = db.Column(db.String(100), nullable=False, index=True)
+    entry = db.Column(db.String(500), nullable=False)
+
+# This command creates the above tables in your database if they don't already exist.
+# It's safe to run every time the app starts.
+with app.app_context():
+    db.create_all()
+
 
 # --- Main Page & Tracker Routes ---
-
 @app.route('/')
 def index():
-    """Renders the main tracker page."""
     return render_template('index.html')
 
-@app.route('/tracker') 
+@app.route('/tracker')
 def tracker():
     return render_template('tracker.html')
 
 # --- Dashboard & Progress Routes ---
-
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
 
 @app.route('/progress')
 def progress():
-    logs = []
-    for file in sorted(os.listdir(LOGS_DIR)):
-        if file.endswith(".json"):
-            with open(os.path.join(LOGS_DIR, file)) as f:
-                logs.append(json.load(f))
+    """REFACTORED: Fetches all logs from the database instead of files."""
+    logs_from_db = DailyLog.query.order_by(DailyLog.log_date.desc()).all()
+    # Convert DB objects to the dictionary format your template expects
+    logs = [
+        {
+            "date": log.log_date.strftime("%Y-%m-%d"),
+            "notes": log.notes,
+            "completed_tasks": log.completed_tasks
+        } for log in logs_from_db
+    ]
     return render_template("progress.html", logs=logs)
-
-# --- CTF Dashboard Route (Re-added) ---
 
 @app.route('/ctf')
 def ctf_dashboard():
-    """Renders the CTF dashboard page."""
     return render_template('ctf_dashboard.html')
 
 # --- API Endpoints ---
-
+# This endpoint now needs to fetch history from the DB before calling the AI
 @app.route("/next_suggestion", methods=["POST"])
 def next_suggestion():
     data = request.get_json()
     topic = data.get("topic")
-    # Get the level, default to "Basic" if not provided
-    level = data.get("level", "Basic") 
-    # Pass the level to the get_next_step function
-    suggestion = get_next_step(topic, level) 
+    level = data.get("level", "Basic")
+    
+    # Fetch recent history from the database to provide context to the AI
+    history_items = TopicHistory.query.filter_by(topic=topic.lower()).order_by(TopicHistory.id.desc()).limit(5).all()
+    history = [item.entry for item in reversed(history_items)] # Pass a simple list of strings
+
+    suggestion = get_next_step(topic, history, level)
+    
+    # Save the new suggestion to history so it's not repeated
+    if suggestion and "AI is busy" not in suggestion:
+        new_history_entry = TopicHistory(topic=topic.lower(), entry=f"({level}) {suggestion}")
+        db.session.add(new_history_entry)
+        db.session.commit()
+        
     return jsonify({"suggestion": suggestion})
 
+# This endpoint also now needs to fetch history from the DB
 @app.route('/get_suggestion', methods=['POST'])
 def get_suggestion():
-    """Gets a new task suggestion from the AI."""
     data = request.json
     topic = data.get('topic')
     learning = data.get('learning')
@@ -69,92 +104,113 @@ def get_suggestion():
     if not topic or not learning:
         return jsonify({"suggestion": "Topic and learning context are required."})
 
-    suggestion = get_ai_suggestion(topic, learning)
+    history_items = TopicHistory.query.filter_by(topic=topic.lower()).order_by(TopicHistory.id.desc()).limit(5).all()
+    history = [item.entry for item in reversed(history_items)]
+
+    suggestion = get_ai_suggestion(topic, learning, history) # Pass history to the function
     return jsonify({"suggestion": suggestion})
+
 
 @app.route('/save_log', methods=['POST'])
 def save_log():
+    """REFACTORED: Saves a log entry to the database."""
     data = request.json
     date_str = data.get('date')
-    filename = os.path.join(LOGS_DIR, f"{date_str}.json")
-    log_entry = {
-        "date": date_str,
-        "notes": data.get("notes"),
-        "completed_tasks": data.get("completed_tasks")
-    }
-    with open(filename, 'w') as f:
-        json.dump(log_entry, f, indent=4)
+    log_date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
 
+    # Find if a log for this date already exists
+    log = DailyLog.query.filter_by(log_date=log_date_obj).first()
+
+    if not log:
+        # If it doesn't exist, create a new one
+        log = DailyLog(log_date=log_date_obj)
+        db.session.add(log)
+
+    # Update the log's data
+    log.notes = data.get("notes")
+    log.completed_tasks = data.get("completed_tasks", {})
+
+    # Save the topic history (replaces update_topic_history)
     for topic, info in data.get("completed_tasks", {}).items():
         if info.get("done") and info.get("task"):
-            update_topic_history(topic, info["task"])
-
+            new_history_entry = TopicHistory(topic=topic.lower(), entry=info["task"])
+            db.session.add(new_history_entry)
+    
+    db.session.commit() # Commit all changes to the database
     return jsonify({"status": "success", "message": f"Log for {date_str} saved."})
 
-@app.route('/load_log/<date>')
-def load_log(date):
-    filepath = os.path.join(LOGS_DIR, f"{date}.json")
-    if os.path.exists(filepath):
-        with open(filepath) as f:
-            data = json.load(f)
-        return jsonify({"status": "found", "tasks": data.get("completed_tasks", {}), "notes": data.get("notes", "")})
+
+@app.route('/load_log/<date_str>')
+def load_log(date_str):
+    """REFACTORED: Loads a log entry from the database."""
+    log_date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+    log = DailyLog.query.filter_by(log_date=log_date_obj).first()
+
+    if log:
+        return jsonify({
+            "status": "found",
+            "tasks": log.completed_tasks or {},
+            "notes": log.notes or ""
+        })
     return jsonify({"status": "not found"})
+
 
 @app.route('/get_completed_htb')
 def get_completed_htb():
-    """API endpoint for CTF dashboard."""
-    return jsonify({"completed": get_all_history("htb")})
+    """REFACTORED: Fetches HTB history from the database."""
+    items = TopicHistory.query.filter_by(topic='htb').all()
+    completed_list = [item.entry for item in items]
+    return jsonify({"completed": completed_list})
+
 
 @app.route('/get_completed_bandit')
 def get_completed_bandit():
-    """API endpoint for CTF dashboard."""
-    return jsonify({"completed": get_all_history("bandit")})
+    """REFACTORED: Fetches Bandit history from the database."""
+    items = TopicHistory.query.filter_by(topic='bandit').all()
+    completed_list = [item.entry for item in items]
+    return jsonify({"completed": completed_list})
+
 
 @app.route('/analytics_data')
 def analytics_data():
-    from datetime import timedelta
-    import glob
+    """REFACTORED: Calculates analytics from database data."""
+    logs = DailyLog.query.order_by(DailyLog.log_date.asc()).all()
 
-    files = sorted(glob.glob(f"{LOGS_DIR}/*.json"))
-    dates = []
+    if not logs:
+        return jsonify({
+            "dates": [], "dailyLogs": [], "topicCounts": {},
+            "longestStreak": 0, "currentStreak": 0
+        })
+
+    dates = [log.log_date.strftime("%Y-%m-%d") for log in logs]
     topic_counts = {}
-    streak = 0
-    longest_streak = 0
-    last_date_obj = None # Use a clearer variable name for the date object
-    current_streak = 0
-
-    for file in files:
-        with open(file) as f:
-            data = json.load(f)
-            date_str = data['date']
-            dates.append(date_str)
-
-            for key, task_obj in data.get('completed_tasks', {}).items():
-                task = task_obj.get("task") if isinstance(task_obj, dict) else task_obj
-                if task:
-                    topic_counts[key] = topic_counts.get(key, 0) + 1
-
-            # Streak logic
-            curr_date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
-            if last_date_obj:
-                if (curr_date_obj - last_date_obj).days == 1:
-                    streak += 1
-                elif (curr_date_obj - last_date_obj).days > 1:
-                    # If there's a gap, the streak is broken
-                    longest_streak = max(longest_streak, streak)
-                    streak = 1 # Start a new streak
-            else:
-                streak = 1 # This is the very first log
-            last_date_obj = curr_date_obj
-
-    longest_streak = max(longest_streak, streak)
     
-    # --- New logic to determine the current streak ---
-    today = datetime.now().date()
-    if last_date_obj and (today - last_date_obj).days <= 1:
-        # If the last log was today or yesterday, the last calculated streak is the current one
-        current_streak = streak
+    for log in logs:
+        for key, task_obj in log.completed_tasks.items():
+            task = task_obj.get("task") if isinstance(task_obj, dict) else task_obj
+            if task:
+                topic_counts[key] = topic_counts.get(key, 0) + 1
 
+    # Streak Logic (can remain largely the same, just using date objects)
+    longest_streak = 0
+    current_streak = 0
+    if logs:
+        streak = 1
+        longest_streak = 1
+        for i in range(1, len(logs)):
+            if (logs[i].log_date - logs[i-1].log_date).days == 1:
+                streak += 1
+            else:
+                longest_streak = max(longest_streak, streak)
+                streak = 1
+        longest_streak = max(longest_streak, streak)
+
+        # Calculate current streak
+        last_log_date = logs[-1].log_date
+        today = date.today()
+        if (today - last_log_date).days <= 1:
+            current_streak = streak
+    
     return jsonify({
         "dates": dates,
         "dailyLogs": [1] * len(dates),
@@ -163,18 +219,9 @@ def analytics_data():
         "currentStreak": current_streak
     })
 
-# --- Utility Routes ---
-
-@app.route('/reset_memory')
-def reset_memory():
-    if app.debug:
-        open("tracker_memory.json", "w").write("{}")
-        return "Memory reset."
-    else:
-        return "This function is disabled in production mode.", 403
 
 # --- App Execution ---
-
 if __name__ == '__main__':
-    # When you are finished with development, change debug=True to debug=False
+    # For local development, you might want debug=True
+    # For production on Render, debug MUST be False.
     app.run(debug=False, host='0.0.0.0', port=5000)

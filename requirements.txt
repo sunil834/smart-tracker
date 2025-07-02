@@ -1,4 +1,6 @@
 Flask
-gunicorn
-python-dotenv
 google-generativeai
+python-dotenv
+gunicorn
+Flask-SQLAlchemy
+psycopg2-binary
