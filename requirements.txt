@@ -4,3 +4,4 @@ python-dotenv
 gunicorn
 Flask-SQLAlchemy
 psycopg2-binary
+APScheduler

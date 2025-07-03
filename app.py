@@ -219,6 +219,31 @@ def analytics_data():
         "currentStreak": current_streak
     })
 
+# --- Daily Backup Scheduler ---
+from apscheduler.schedulers.background import BackgroundScheduler
+import subprocess # To run the shell script
+
+def run_backup_job():
+    """
+    This function is called by the scheduler to execute the backup script.
+    """
+    print("Scheduler triggered: Starting backup job...")
+    try:
+        # We run the backup.sh script using a subprocess
+        # The environment variables from Render will be available to this script
+        subprocess.run(["bash", "backup.sh"], check=True, capture_output=True, text=True)
+        print("Backup job completed successfully.")
+    except subprocess.CalledProcessError as e:
+        # Log any errors from the script
+        print(f"Backup job failed.")
+        print(f"Error output:\n{e.stderr}")
+
+# Initialize the scheduler to run in the background
+scheduler = BackgroundScheduler()
+# Schedule the run_backup_job to run every day at 05:05 UTC
+scheduler.add_job(run_backup_job, 'cron', hour=5, minute=5)
+# Start the scheduler
+scheduler.start()
 
 # --- App Execution ---
 if __name__ == '__main__':
