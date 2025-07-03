@@ -1,11 +1,15 @@
 # app.py (Refactored for PostgreSQL)
 
 import os
+import subprocess
 from datetime import datetime, date
 from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import JSON
 import json # Still needed for processing request data
+
+# --- Daily Backup Scheduler ---
+from apscheduler.schedulers.background import BackgroundScheduler
 
 # Centralized imports from your custom modules
 # We pass history to gemini now, so no direct db access is needed there
@@ -218,10 +222,6 @@ def analytics_data():
         "longestStreak": longest_streak,
         "currentStreak": current_streak
     })
-
-# --- Daily Backup Scheduler ---
-from apscheduler.schedulers.background import BackgroundScheduler
-import subprocess # To run the shell script
 
 def run_backup_job():
     """
