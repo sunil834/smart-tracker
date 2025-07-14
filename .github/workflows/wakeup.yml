@@ -3,7 +3,7 @@ name: Wake Up Render Service
 on:
   schedule:
     # This runs at 5:00 AM UTC every day
-    - cron: '*/14 * * * *'
+    - cron: '*/12 * * * *'
 
 jobs:
   wake-up:
