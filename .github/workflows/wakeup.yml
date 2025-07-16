@@ -9,4 +9,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping the web service to wake it up
-        run: curl -s https://smart-tracker-su0u.onrender.com > /dev/null
+        run: curl -s https://smart-tracker-su0u.onrender.com/dashboard > /dev/null
