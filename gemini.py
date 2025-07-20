@@ -39,25 +39,25 @@ def get_next_step(topic, history, level="Basic"):
     model = genai.GenerativeModel('gemini-1.5-flash') 
     recent = " -> ".join(history) if history else "None yet"
     prompt = f"""
-    As a Python mentor, provide a learning task for a student.
+            As a coding mentor, provide a learning task for a student.
 
-    **Student's History for '{topic}':**
-    {recent}
+            Student's History for '{topic}':
+            {recent}
 
-    **Instructions:**
-    1.  Suggest a **new, specific, actionable task** that has NOT been done before.
-    2.  The task must match the requested difficulty level: **{level}**.
-    3.  The response must be a single sentence only. No intro or extra text.
+            Instructions:
+            Suggest a new, specific, actionable task that has NOT been done before.
+            The task must match the requested difficulty level: {level}.
+            The response must be a single sentence only. No intro or extra text.
 
-    **Difficulty Level Guide:**
-    - **Basic:** Core concepts like variables, loops, conditionals, simple data structures (lists, dicts).
-    - **Intermediate:** Functions, OOP basics (classes), file I/O, simple modules (like `random` or `datetime`).
-    - **Advanced:** Advanced OOP (inheritance, decorators), list comprehensions, generators, working with APIs (`requests`).
-    - **Pro:** Data structures & algorithms (trees, graphs), concurrency, metaprogramming, performance optimization.
-    - **Scripting:** Practical automation tasks involving file system operations (`os`, `shutil`), web scraping (`BeautifulSoup`), or data manipulation (`csv`).
+            Difficulty Level Guide:
+            Basic: Core language concepts (variables, loops, conditionals, simple data structures).
+            Intermediate: Functions, modularization, OOP basics (classes), file I/O, using simple libraries or frameworks.
+            Advanced: Advanced OOP (inheritance, decorators), list comprehensions or similar constructs, generators/iterators, working with APIs, regular expressions.
+            Pro: Data structures & algorithms (trees, graphs, dynamic programming), concurrency or async, metaprogramming, performance profiling or optimization, secure coding practices.
+            Scripting: Practical automation or scripting tasks involving file operations, web scraping, data parsing or manipulation, process automation.
 
-    Suggest the next task now.
-    """
+            Suggest the next task now.
+            """
 
     seen = set(history)
     max_attempts = 5
