@@ -1,4 +1,6 @@
 #!/bin/bash
+aws --version
+which aws
 
 # Exit immediately if any command fails
 set -e
