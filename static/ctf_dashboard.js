@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!outputDiv) return;
 
-            outputDiv.innerHTML = "<em>...thinking...</em>";
+            outputDiv.innerHTML = "<em>thinking...</em>";
 
             if (topic === 'htb') {
                 fetch("/get_completed_htb")
