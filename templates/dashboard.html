@@ -1,4 +1,3 @@
-<!-- templates/dashboard.html -->
 {% extends "base.html" %}
 
 {% block title %}Dashboard{% endblock %}
@@ -8,20 +7,74 @@
 {% endblock %}
 
 {% block content %}
-    <h1>📊 Skill Tracker Dashboard</h1>
-
-    <div id="dashboard-content">
-        <div class="chart-container">
-            <canvas id="daysChart"></canvas>
+    <div class="dashboard-header">
+        <div class="nav-links">
+            <a href="/">🏠 Home</a>
+            <a href="/progress">📈 Progress</a>
+            <a href="/tracker">📝 Tracker</a>
+            <a href="/ctf">🚩 CTF</a>
         </div>
-        <div class="chart-container">
-            <canvas id="topicChart"></canvas>
+        
+        <div class="dashboard-title">
+            📊 Skill Tracker Dashboard
         </div>
-        <p id="streakText"></p>
-        <p id="currentStreakText"></p>
+        
+        <div class="streak-info">
+            <span id="currentStreakBadge">Current Streak: 8 days</span>
+            <select id="monthSelector">
+                <option value="2025-07">July 2025</option>
+                <option value="2025-06">June 2025</option>
+                <option value="2025-08">August 2025</option>
+            </select>
+        </div>
     </div>
 
-    <!-- For loading and error states -->
+    <div id="dashboard-content">
+        <!-- Calendar Grid -->
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <div class="day-label">Sun</div>
+                <div class="day-label">Mon</div>
+                <div class="day-label">Tue</div>
+                <div class="day-label">Wed</div>
+                <div class="day-label">Thu</div>
+                <div class="day-label">Fri</div>
+                <div class="day-label">Sat</div>
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- Calendar days will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-number" id="currentStreakStat">8</div>
+                <div class="stat-label">Current Streak</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="longestStreakStat">8</div>
+                <div class="stat-label">Longest Streak</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalActiveDays">19</div>
+                <div class="stat-label">Total Active Days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="thisMonthDays">21</div>
+                <div class="stat-label">This Month</div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-container">
+                <canvas id="topicChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading and error states -->
     <div id="loading-state" class="status-message">Loading dashboard data...</div>
     <div id="error-state" class="status-message hidden">Failed to load data. Please try again later.</div>
 
@@ -44,11 +97,15 @@
           }
           const data = await response.json();
 
-          // Create charts and update text
-          createDaysChart(data.dates, data.dailyLogs);
+          // Update stats
+          document.getElementById('currentStreakStat').innerText = data.currentStreak;
+          document.getElementById('longestStreakStat').innerText = data.longestStreak;
+          document.getElementById('totalActiveDays').innerText = data.dates.length;
+          document.getElementById('currentStreakBadge').innerText = `Current Streak: ${data.currentStreak} days`;
+
+          // Create calendar and charts
+          createCalendar(data.dates);
           createTopicChart(data.topicCounts);
-          document.getElementById('streakText').innerText = `🔥 Longest Streak: ${data.longestStreak} days`;
-          document.getElementById('currentStreakText').innerText = `⚡ Current Streak: ${data.currentStreak} days`;
 
           // Show content, hide loading indicator
           dashboardContent.classList.remove('hidden');
@@ -56,34 +113,47 @@
 
         } catch (error) {
           console.error('Error fetching analytics data:', error);
-          // Show error message, hide loading indicator
           errorState.classList.remove('hidden');
           loadingState.classList.add('hidden');
         }
       })();
 
-      function createDaysChart(labels, data) {
-        const ctx = document.getElementById('daysChart').getContext('2d');
-        new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Logged Days',
-              data: data,
-              backgroundColor: '#00ff87' // Could use CSS variables here
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              title: { display: true, text: 'Daily Log Frequency' }
-            },
-            scales: {
-              y: { beginAtZero: true }
-            }
+      function createCalendar(activeDates) {
+        const calendarGrid = document.getElementById('calendarGrid');
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        // Get first day of month and number of days
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDayOfWeek = firstDay.getDay();
+
+        // Clear existing calendar
+        calendarGrid.innerHTML = '';
+
+        // Add empty cells for days before month starts
+        for (let i = 0; i < startingDayOfWeek; i++) {
+          const emptyDay = document.createElement('div');
+          emptyDay.className = 'calendar-day empty';
+          calendarGrid.appendChild(emptyDay);
+        }
+
+        // Add days of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dayElement = document.createElement('div');
+          dayElement.className = 'calendar-day';
+          dayElement.textContent = day;
+
+          // Check if this day has activity
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          if (activeDates.includes(dateStr)) {
+            dayElement.classList.add('active');
           }
-        });
+
+          calendarGrid.appendChild(dayElement);
+        }
       }
 
       function createTopicChart(topicData) {
@@ -93,15 +163,33 @@
           data: {
             labels: Object.keys(topicData),
             datasets: [{
-              label: 'Topic Frequency',
+              label: 'Topic Distribution',
               data: Object.values(topicData),
-              backgroundColor: ['#00e676', '#1de9b6', '#64ffda', '#69f0ae', '#76ff03']
+              backgroundColor: [
+                '#00ff87',
+                '#1de9b6', 
+                '#64ffda', 
+                '#69f0ae', 
+                '#76ff03',
+                '#00e676',
+                '#4fc3f7'
+              ]
             }]
           },
           options: {
             responsive: true,
             plugins: {
-              title: { display: true, text: 'Topic Distribution' }
+              title: { 
+                display: true, 
+                text: 'Topic Distribution',
+                color: '#00ff87',
+                font: { size: 16 }
+              },
+              legend: {
+                labels: {
+                  color: '#e0e0e0'
+                }
+              }
             }
           }
         });

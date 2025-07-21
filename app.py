@@ -183,19 +183,29 @@ def analytics_data():
     if not logs:
         return jsonify({
             "dates": [], "dailyLogs": [], "topicCounts": {},
-            "longestStreak": 0, "currentStreak": 0
+            "longestStreak": 0, "currentStreak": 0, "thisMonth": 0
         })
 
     dates = [log.log_date.strftime("%Y-%m-%d") for log in logs]
     topic_counts = {}
     
+    # Count this month's activities
+    current_month = date.today().month
+    current_year = date.today().year
+    this_month_count = 0
+    
     for log in logs:
+        # Count topics
         for key, task_obj in log.completed_tasks.items():
             task = task_obj.get("task") if isinstance(task_obj, dict) else task_obj
             if task:
                 topic_counts[key] = topic_counts.get(key, 0) + 1
+        
+        # Count this month's logs
+        if log.log_date.month == current_month and log.log_date.year == current_year:
+            this_month_count += 1
 
-    # Streak Logic (can remain largely the same, just using date objects)
+    # Streak Logic (existing code)
     longest_streak = 0
     current_streak = 0
     if logs:
@@ -220,7 +230,8 @@ def analytics_data():
         "dailyLogs": [1] * len(dates),
         "topicCounts": topic_counts,
         "longestStreak": longest_streak,
-        "currentStreak": current_streak
+        "currentStreak": current_streak,
+        "thisMonth": this_month_count
     })
 
 def run_backup_job():
