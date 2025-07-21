@@ -177,7 +177,7 @@ def get_completed_bandit():
 
 @app.route('/analytics_data')
 def analytics_data():
-    """REFACTORED: Calculates analytics and prepares data for calendar dashboard."""
+    """CORRECTED: Properly calculates streaks from actual daily logs."""
     logs = DailyLog.query.order_by(DailyLog.log_date.asc()).all()
     
     if not logs:
@@ -189,67 +189,77 @@ def analytics_data():
             "activity_map": {}
         })
 
-    # Prepare activity map for calendar (True/False for each date)
+    # Create activity map - True for days with ANY completed tasks
     activity_map = {}
+    active_dates = []
+    
     for log in logs:
         date_str = log.log_date.strftime("%Y-%m-%d")
-        # Consider day active if any tasks were completed
-        has_activity = any(
-            task.get("done", False) 
-            for task in log.completed_tasks.values()
-            if isinstance(task, dict)
-        )
+        # Check if ANY task was completed that day
+        has_activity = False
+        
+        if hasattr(log, 'completed_tasks') and log.completed_tasks:
+            for key, task_data in log.completed_tasks.items():
+                if isinstance(task_data, dict):
+                    if task_data.get("done", False) or task_data.get("task", "").strip():
+                        has_activity = True
+                        break
+                elif isinstance(task_data, str) and task_data.strip():
+                    has_activity = True
+                    break
+        
         activity_map[date_str] = has_activity
-
-    # Prepare data for the heatmap: [{"date": "YYYY-MM-DD", "value": 1}, ...]
-    heatmap_data = []
-    for log in logs:
-        date_str = log.log_date.strftime("%Y-%m-%d")
-        has_activity = activity_map.get(date_str, False)
         if has_activity:
-            heatmap_data.append({"date": date_str, "value": 1})
+            active_dates.append(log.log_date)
+
+    # Sort active dates for proper streak calculation
+    active_dates.sort()
+
+    # Calculate current streak
+    current_streak = 0
+    if active_dates:
+        today = date.today()
+        
+        # Find the most recent active date
+        last_active = active_dates[-1]
+        
+        # Only count as current streak if within last 2 days
+        if (today - last_active).days <= 1:
+            current_streak = 1
+            
+            # Count backwards for consecutive days
+            for i in range(len(active_dates) - 2, -1, -1):
+                if (active_dates[i + 1] - active_dates[i]).days == 1:
+                    current_streak += 1
+                else:
+                    break
+
+    # Calculate longest streak
+    longest_streak = 0
+    if active_dates:
+        temp_streak = 1
+        longest_streak = 1
+        
+        for i in range(1, len(active_dates)):
+            if (active_dates[i] - active_dates[i-1]).days == 1:
+                temp_streak += 1
+                longest_streak = max(longest_streak, temp_streak)
+            else:
+                temp_streak = 1
 
     # Count topics
     topic_counts = {}
     for log in logs:
-        for key, task_obj in log.completed_tasks.items():
-            if isinstance(task_obj, dict) and task_obj.get("task"):
-                topic_counts[key] = topic_counts.get(key, 0) + 1
+        if hasattr(log, 'completed_tasks') and log.completed_tasks:
+            for key, task_obj in log.completed_tasks.items():
+                if isinstance(task_obj, dict) and task_obj.get("task"):
+                    topic_counts[key] = topic_counts.get(key, 0) + 1
 
-    # Calculate streaks
-    longest_streak = 0
-    current_streak = 0
-    
-    if logs:
-        # Sort logs by date to calculate streaks properly
-        active_dates = [log.log_date for log in logs if activity_map.get(log.log_date.strftime("%Y-%m-%d"), False)]
-        active_dates.sort()
-        
-        if active_dates:
-            streak = 1
-            longest_streak = 1
-            
-            for i in range(1, len(active_dates)):
-                if (active_dates[i] - active_dates[i-1]).days == 1:
-                    streak += 1
-                else:
-                    longest_streak = max(longest_streak, streak)
-                    streak = 1
-            
-            longest_streak = max(longest_streak, streak)
-            
-            # Check current streak
-            if active_dates:
-                last_active_date = active_dates[-1]
-                today = date.today()
-                if (today - last_active_date).days <= 1:
-                    # Count backwards from last active date
-                    current_streak = 1
-                    for i in range(len(active_dates) - 2, -1, -1):
-                        if (active_dates[i+1] - active_dates[i]).days == 1:
-                            current_streak += 1
-                        else:
-                            break
+    # Prepare heatmap data
+    heatmap_data = []
+    for date_str, is_active in activity_map.items():
+        if is_active:
+            heatmap_data.append({"date": date_str, "value": 1})
 
     return jsonify({
         "topicCounts": topic_counts,
@@ -257,7 +267,7 @@ def analytics_data():
         "currentStreak": current_streak,
         "heatmap_data": heatmap_data,
         "activity_map": activity_map,
-        "current_month": datetime.now().month - 1,  # JavaScript months are 0-indexed
+        "current_month": datetime.now().month - 1,
         "current_year": datetime.now().year
     })
 
