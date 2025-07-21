@@ -397,3 +397,25 @@ button:active {
   margin-bottom: 8px;
   list-style-type: none;
 }
+
+/* --- Streak Box Visualization --- */
+#streak-boxes-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px 0;
+  margin-bottom: 1rem;
+}
+
+.streak-box {
+  width: 15px;
+  height: 15px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
+  border-radius: 2px;
+}
+
+.streak-box.filled {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color-hover);
+}
