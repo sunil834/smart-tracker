@@ -1,19 +1,19 @@
-<!-- templates/dashboard.html -->
 {% extends "base.html" %}
 
 {% block title %}Dashboard{% endblock %}
 
 {% block head_extra %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap@3.6.2/cal-heatmap.css">
 {% endblock %}
 
 {% block content %}
     <h1>📊 Skill Tracker Dashboard</h1>
 
-    <div id="dashboard-content">
-        <div class="chart-container">
-            <canvas id="daysChart"></canvas>
-        </div>
+    <div id="dashboard-content" class="hidden">
+        <div id="cal-heatmap"></div>
+        <hr>
+        
         <div class="chart-container">
             <canvas id="topicChart"></canvas>
         </div>
@@ -21,10 +21,12 @@
         <p id="currentStreakText"></p>
     </div>
 
-    <!-- For loading and error states -->
     <div id="loading-state" class="status-message">Loading dashboard data...</div>
     <div id="error-state" class="status-message hidden">Failed to load data. Please try again later.</div>
 
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cal-heatmap@3.6.2/cal-heatmap.min.js"></script>
+    
     <script>
       // Self-invoking async function to use await
       (async () => {
@@ -44,8 +46,25 @@
           }
           const data = await response.json();
 
-          // Create charts and update text
-          createDaysChart(data.dates, data.dailyLogs);
+          // Initialize the Heatmap
+          const cal = new CalHeatMap();
+          cal.init({
+              itemSelector: "#cal-heatmap",
+              domain: "month",
+              subDomain: "day",
+              data: data.heatmap_data,
+              start: new Date(2025, 6), // Start view in July (month is 0-indexed, so 6 = July)
+              cellSize: 15,
+              range: 4, // Display 4 months at a time
+              legend: [1],
+              legendColors: {
+                  min: "#efefef",
+                  max: "#00ff87",
+                  empty: "rgba(0,0,0,0.1)"
+              }
+          });
+          
+          // Create the topic chart and update streak text
           createTopicChart(data.topicCounts);
           document.getElementById('streakText').innerText = `🔥 Longest Streak: ${data.longestStreak} days`;
           document.getElementById('currentStreakText').innerText = `⚡ Current Streak: ${data.currentStreak} days`;
@@ -61,30 +80,6 @@
           loadingState.classList.add('hidden');
         }
       })();
-
-      function createDaysChart(labels, data) {
-        const ctx = document.getElementById('daysChart').getContext('2d');
-        new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Logged Days',
-              data: data,
-              backgroundColor: '#00ff87' // Could use CSS variables here
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              title: { display: true, text: 'Daily Log Frequency' }
-            },
-            scales: {
-              y: { beginAtZero: true }
-            }
-          }
-        });
-      }
 
       function createTopicChart(topicData) {
         const ctx = document.getElementById('topicChart').getContext('2d');

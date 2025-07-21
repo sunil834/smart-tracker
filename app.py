@@ -183,8 +183,16 @@ def analytics_data():
     if not logs:
         return jsonify({
             "dates": [], "dailyLogs": [], "topicCounts": {},
-            "longestStreak": 0, "currentStreak": 0
+            "longestStreak": 0, "currentStreak": 0,
+            "heatmap_data": [] # Add this for the heatmap
         })
+
+    # --- NEW: Prepare data for the heatmap ---
+    # The library needs data in the format: [{"date": "YYYY-MM-DD", "value": 1}, ...]
+    heatmap_data = [
+        {"date": log.log_date.strftime("%Y-%m-%d"), "value": 1}
+        for log in logs
+    ]
 
     dates = [log.log_date.strftime("%Y-%m-%d") for log in logs]
     topic_counts = {}
@@ -195,7 +203,7 @@ def analytics_data():
             if task:
                 topic_counts[key] = topic_counts.get(key, 0) + 1
 
-    # Streak Logic (can remain largely the same, just using date objects)
+    # Streak Logic (remains the same)
     longest_streak = 0
     current_streak = 0
     if logs:
@@ -209,7 +217,6 @@ def analytics_data():
                 streak = 1
         longest_streak = max(longest_streak, streak)
 
-        # Calculate current streak
         last_log_date = logs[-1].log_date
         today = date.today()
         if (today - last_log_date).days <= 1:
@@ -220,7 +227,8 @@ def analytics_data():
         "dailyLogs": [1] * len(dates),
         "topicCounts": topic_counts,
         "longestStreak": longest_streak,
-        "currentStreak": current_streak
+        "currentStreak": current_streak,
+        "heatmap_data": heatmap_data # Add the new heatmap data to the response
     })
 
 def run_backup_job():
