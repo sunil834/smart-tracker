@@ -14,4 +14,3 @@ backup/
 .idea/
 *.DS_Store
 .github
-backup.sh
