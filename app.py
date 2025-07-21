@@ -177,60 +177,91 @@ def get_completed_bandit():
 
 @app.route('/analytics_data')
 def analytics_data():
-    """REFACTORED: Calculates analytics from database data."""
+    """REFACTORED: Calculates analytics and prepares data for calendar dashboard."""
     logs = DailyLog.query.order_by(DailyLog.log_date.asc()).all()
-
+    
     if not logs:
         return jsonify({
-            "dates": [], "dailyLogs": [], "topicCounts": {},
-            "longestStreak": 0, "currentStreak": 0,
-            "heatmap_data": [] # Add this for the heatmap
+            "topicCounts": {}, 
+            "longestStreak": 0, 
+            "currentStreak": 0, 
+            "heatmap_data": [],
+            "activity_map": {}
         })
 
-    # --- NEW: Prepare data for the heatmap ---
-    # The library needs data in the format: [{"date": "YYYY-MM-DD", "value": 1}, ...]
-    heatmap_data = [
-        {"date": log.log_date.strftime("%Y-%m-%d"), "value": 1}
-        for log in logs
-    ]
+    # Prepare activity map for calendar (True/False for each date)
+    activity_map = {}
+    for log in logs:
+        date_str = log.log_date.strftime("%Y-%m-%d")
+        # Consider day active if any tasks were completed
+        has_activity = any(
+            task.get("done", False) 
+            for task in log.completed_tasks.values()
+            if isinstance(task, dict)
+        )
+        activity_map[date_str] = has_activity
 
-    dates = [log.log_date.strftime("%Y-%m-%d") for log in logs]
+    # Prepare data for the heatmap: [{"date": "YYYY-MM-DD", "value": 1}, ...]
+    heatmap_data = []
+    for log in logs:
+        date_str = log.log_date.strftime("%Y-%m-%d")
+        has_activity = activity_map.get(date_str, False)
+        if has_activity:
+            heatmap_data.append({"date": date_str, "value": 1})
+
+    # Count topics
     topic_counts = {}
-    
     for log in logs:
         for key, task_obj in log.completed_tasks.items():
-            task = task_obj.get("task") if isinstance(task_obj, dict) else task_obj
-            if task:
+            if isinstance(task_obj, dict) and task_obj.get("task"):
                 topic_counts[key] = topic_counts.get(key, 0) + 1
 
-    # Streak Logic (remains the same)
+    # Calculate streaks
     longest_streak = 0
     current_streak = 0
-    if logs:
-        streak = 1
-        longest_streak = 1
-        for i in range(1, len(logs)):
-            if (logs[i].log_date - logs[i-1].log_date).days == 1:
-                streak += 1
-            else:
-                longest_streak = max(longest_streak, streak)
-                streak = 1
-        longest_streak = max(longest_streak, streak)
-
-        last_log_date = logs[-1].log_date
-        today = date.today()
-        if (today - last_log_date).days <= 1:
-            current_streak = streak
     
+    if logs:
+        # Sort logs by date to calculate streaks properly
+        active_dates = [log.log_date for log in logs if activity_map.get(log.log_date.strftime("%Y-%m-%d"), False)]
+        active_dates.sort()
+        
+        if active_dates:
+            streak = 1
+            longest_streak = 1
+            
+            for i in range(1, len(active_dates)):
+                if (active_dates[i] - active_dates[i-1]).days == 1:
+                    streak += 1
+                else:
+                    longest_streak = max(longest_streak, streak)
+                    streak = 1
+            
+            longest_streak = max(longest_streak, streak)
+            
+            # Check current streak
+            if active_dates:
+                last_active_date = active_dates[-1]
+                today = date.today()
+                if (today - last_active_date).days <= 1:
+                    # Count backwards from last active date
+                    current_streak = 1
+                    for i in range(len(active_dates) - 2, -1, -1):
+                        if (active_dates[i+1] - active_dates[i]).days == 1:
+                            current_streak += 1
+                        else:
+                            break
+
     return jsonify({
-        "dates": dates,
-        "dailyLogs": [1] * len(dates),
         "topicCounts": topic_counts,
         "longestStreak": longest_streak,
         "currentStreak": current_streak,
-        "heatmap_data": heatmap_data # Add the new heatmap data to the response
+        "heatmap_data": heatmap_data,
+        "activity_map": activity_map,
+        "current_month": datetime.now().month - 1,  # JavaScript months are 0-indexed
+        "current_year": datetime.now().year
     })
 
+# --- Daily Backup Job ---
 def run_backup_job():
     """
     This function is called by the scheduler to execute the backup script.
