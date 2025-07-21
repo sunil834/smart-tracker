@@ -7,8 +7,11 @@ __pycache__/
 # Ephemeral data files that should not be in version control
 tracker_memory.json
 tracker_logs/
+backup/
 
 # IDE / OS specific files
 .vscode/
 .idea/
 *.DS_Store
+.github
+backup.sh
