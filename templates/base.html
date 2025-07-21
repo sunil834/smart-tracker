@@ -1,3 +1,4 @@
+<!-- templates/base.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,10 +10,8 @@
     {% block head_extra %}{% endblock %}
 </head>
 <body>
-    {% block body_content %}
-        <main class="container">
-            {% block content %}{% endblock %}
-        </main>
-    {% endblock %}
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
 </body>
 </html>
