@@ -53,18 +53,16 @@
         domain: "month",
         subDomain: "day",
         data: data.heatmap_data,
-        start: new Date(2025, 6), // Start view in July (month is 0-indexed, so 6 = July)
+        start: new Date(2025, 6), // Start in July
         cellSize: 15,
-        range: 5, // Increased range to show more months
-        legend: [1], // Keep this as 1 for a simple on/off
+        range: 5,
+        legend: [1],
         legendColors: {
-          // Set the color for the lowest value (1) to your green
+          // This is the critical part that sets the color
           min: "#00ff87",
-          // A slightly darker green for the max, just to create a scale
           max: "#00c46a",
-          empty: "rgba(255, 255, 255, 0.1)", // Color for inactive days
-          base: "rgba(255, 255, 255, 0.1)" // Ensure the base calendar is also dark
-        },
+          empty: "rgba(255, 255, 255, 0.1)"
+        }
       });
 
       // Create the topic chart and update streak text
