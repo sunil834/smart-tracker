@@ -16,7 +16,7 @@ def configure_api():
 # The function now accepts 'history' as an argument
 def get_ai_suggestion(topic, previous_learning, history):
     configure_api()
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('models/gemini-flash-latest')
     recent = " -> ".join(history) if history else "None yet"
     prompt = f"""
     You are a cybersecurity mentor. Topic: {topic}.
@@ -72,5 +72,6 @@ def get_next_step(topic, history, level="Basic"):
         except Exception as e:
             print("Error generating next step:", e)
             break
+
 
     return "AI is busy. Please try again in a moment!"
