@@ -1,16 +1,108 @@
-# Environment variables - NEVER UPLOAD
-.env
-
-# Python cache files
+# Byte-compiled / optimized / DLL files
 __pycache__/
+*.py[cod]
+*$py.class
 
-# Ephemeral data files that should not be in version control
-tracker_memory.json
-tracker_logs/
-backup/
+# C extensions
+*.so
 
-# IDE / OS specific files
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask / Python env
+instance/
+.env
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# VS Code settings
 .vscode/
+
+# JetBrains IDEs
 .idea/
-*.DS_Store
-.github
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Backup files
+*.bak
+*.swp
+*.tmp
+
+# Logs
+*.log
+
+# Render / deployment
+*.pid
+*.sock
+
+# Static / compiled files
+/static/__pycache__/
+/static/css/*.css.map
+/static/js/*.js.map
+
+# Backups
+backup/
+backup.sh
+
+# Secrets
+.env
+*.key
+*.pem
+*.crt
+
+# Python profiler
+.prof
