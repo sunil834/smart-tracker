@@ -1,9 +1,8 @@
-# gemini.py (Modified)
+# gemini.py
 
 import os
 import google.generativeai as genai
 from dotenv import load_dotenv
-# No longer imports from tracker_memory
 
 load_dotenv()
 
@@ -13,10 +12,9 @@ def configure_api():
         raise ValueError("GEMINI_API_KEY not found.")
     genai.configure(api_key=api_key)
 
-# The function now accepts 'history' as an argument
 def get_ai_suggestion(topic, previous_learning, history):
     configure_api()
-    model = genai.GenerativeModel('models/gemini-flash-latest')
+    model = genai.GenerativeModel('models/gemini-2.5-flash')
     recent = " -> ".join(history) if history else "None yet"
     prompt = f"""
     You are a cybersecurity mentor. Topic: {topic}.
@@ -32,7 +30,6 @@ def get_ai_suggestion(topic, previous_learning, history):
         print("Error:", e)
         return "Could not generate."
 
-# The function now accepts 'history' as an argument
 def get_next_step(topic, history, level="Basic"):
     configure_api()
     # You might need to adjust the model name based on availability
@@ -75,3 +72,4 @@ def get_next_step(topic, history, level="Basic"):
 
 
     return "AI is busy. Please try again in a moment!"
+
