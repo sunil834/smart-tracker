@@ -6,12 +6,8 @@ from datetime import datetime, date
 from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import JSON
-import json # Still needed for processing request data
-
-# --- Daily Backup Scheduler ---
 from apscheduler.schedulers.background import BackgroundScheduler
 
-# Centralized imports from your custom modules
 # We pass history to gemini now, so no direct db access is needed there
 from gemini import get_ai_suggestion, get_next_step
 

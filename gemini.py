@@ -14,7 +14,7 @@ def configure_api():
 
 def get_ai_suggestion(topic, previous_learning, history):
     configure_api()
-    model = genai.GenerativeModel('models/gemini-2.5-flash')
+    model = genai.GenerativeModel('models/gemini-flash-latest')
     recent = " -> ".join(history) if history else "None yet"
     prompt = f"""
     You are a cybersecurity mentor. Topic: {topic}.
@@ -33,7 +33,7 @@ def get_ai_suggestion(topic, previous_learning, history):
 def get_next_step(topic, history, level="Basic"):
     configure_api()
     # You might need to adjust the model name based on availability
-    model = genai.GenerativeModel('models/gemini-2.5-flash') 
+    model = genai.GenerativeModel('models/gemini-flash-latest') 
     recent = " -> ".join(history) if history else "None yet"
     prompt = f"""
     As a Python mentor, provide a learning task for a student.
