@@ -1,0 +1,41 @@
+<div class="tree-container vertical-tree">
+    
+    <!-- Progress Header -->
+    <div class="mb-4 p-3 border rounded" style="background: var(--surface-color);">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="m-0 text-white">Guide Progress</h5>
+            <span class="badge bg-dark border border-success" id="guide-progress-text" style="color: var(--primary-color);">Completed 0 / 0 rooms</span>
+        </div>
+        <div class="progress" style="height: 20px; background-color: var(--input-bg-color);">
+            <div id="guide-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%">0%</div>
+        </div>
+    </div>
+
+    <ul class="tree">
+        <li>
+            <span class="root-node">🚀 TryHackMe Start</span>
+            <ul>
+                {% for category, rooms in pdf_tree_data %}
+                <li>
+                    <span class="level-node">{{ category }}</span>
+                    <ul>
+                        {% for id, title in rooms %}
+                        <li>
+                            <div class="d-inline-flex align-items-center">
+                                <input type="checkbox" class="room-checkbox form-check-input me-2" 
+                                       data-room-id="{{ id }}" 
+                                       {% if id in completed_rooms %}checked{% endif %}
+                                       style="margin-top: 0;">
+                                <span class="room-node">
+                                    <a href="https://tryhackme.com/room/{{ id }}" target="_blank">{{ title }}</a>
+                                </span>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% endfor %}
+            </ul>
+        </li>
+    </ul>
+</div>

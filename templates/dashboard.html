@@ -8,24 +8,14 @@
 
 {% block content %}
     <div class="dashboard-header">
-        <div class="nav-links">
-            <a href="/">🏠 Home</a>
-            <a href="/progress">📈 Progress</a>
-            <a href="/tracker">📝 Tracker</a>
-            <a href="/ctf">🚩 CTF</a>
-        </div>
         
         <div class="dashboard-title">
             📊 Skill Tracker Dashboard
         </div>
         
         <div class="streak-info">
-            <span id="currentStreakBadge">Current Streak: 8 days</span>
-            <select id="monthSelector">
-                <option value="2025-07">July 2025</option>
-                <option value="2025-06">June 2025</option>
-                <option value="2025-08">August 2025</option>
-            </select>
+            <span id="currentStreakBadge">Current Streak: - days</span>
+            <span id="currentMonthDisplay" style="padding: 8px 12px; border: 1px solid #333; border-radius: 5px; background: #2a2a2a;">Loading...</span>
         </div>
     </div>
 
@@ -49,19 +39,19 @@
         <!-- Stats Cards -->
         <div class="stats-container">
             <div class="stat-card">
-                <div class="stat-number" id="currentStreakStat">8</div>
+                <div class="stat-number" id="currentStreakStat">-</div>
                 <div class="stat-label">Current Streak</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="longestStreakStat">8</div>
+                <div class="stat-number" id="longestStreakStat">-</div>
                 <div class="stat-label">Longest Streak</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="totalActiveDays">19</div>
+                <div class="stat-number" id="totalActiveDays">-</div>
                 <div class="stat-label">Total Active Days</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="thisMonthDays">21</div>
+                <div class="stat-number" id="thisMonthDays">0</div>
                 <div class="stat-label">This Month</div>
             </div>
         </div>
@@ -101,11 +91,17 @@
           document.getElementById('currentStreakStat').innerText = data.currentStreak;
           document.getElementById('longestStreakStat').innerText = data.longestStreak;
           document.getElementById('totalActiveDays').innerText = data.dates.length;
+          document.getElementById('thisMonthDays').innerText = data.thisMonth; // Fixed: Now updating from backend
           document.getElementById('currentStreakBadge').innerText = `Current Streak: ${data.currentStreak} days`;
 
           // Create calendar and charts
           createCalendar(data.dates);
           createTopicChart(data.topicCounts);
+
+          // Set current month text
+          const now = new Date();
+          const options = { month: 'long', year: 'numeric' };
+          document.getElementById('currentMonthDisplay').innerText = now.toLocaleDateString('en-US', options);
 
           // Show content, hide loading indicator
           dashboardContent.classList.remove('hidden');

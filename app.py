@@ -1,43 +1,119 @@
-# app.py (Refactored for PostgreSQL)
+# app.py (Refactored for PostgreSQL & Auth)
 
 import os
-import subprocess
+import logging
 from datetime import datetime, date
-from flask import Flask, render_template, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.dialects.postgresql import JSON
-from apscheduler.schedulers.background import BackgroundScheduler
-
-# We pass history to gemini now, so no direct db access is needed there
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask_migrate import Migrate
+from flask_login import LoginManager, login_user, current_user, logout_user, login_required
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from gemini import get_ai_suggestion, get_next_step
+
+# Import modular components
+from models import db, User, DailyLog, TopicHistory, UserProgress
+from forms import RegistrationForm, LoginForm, ChangePasswordForm
 
 # --- Basic App and Database Setup ---
 app = Flask(__name__)
 
-# This securely reads the DATABASE_URL environment variable you set in Render
+# Logging Configuration
+if not app.debug:
+    # Set the logging level for the production app logger
+    # Standard output is used by default in production environments
+    app.logger.setLevel(logging.INFO)
+    app.logger.info('Smart Tracker startup')
+
+# Security Config
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-this-in-prod')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+
+# Initialize extensions
+db.init_app(app)
+migrate = Migrate(app, db)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+login_manager.login_message_category = 'info'
+
+# Rate Limiter Setup
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
+
+# --- Error Handlers ---
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback() # Ensure DB session is clean
+    app.logger.error(f"Server Error: {error}")
+    return render_template('500.html'), 500
+
+# --- Login Manager Loader ---
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 
-# --- Database Models ---
-# Replaces the individual .json files in the tracker_logs/ directory
-class DailyLog(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    log_date = db.Column(db.Date, unique=True, nullable=False, index=True)
-    notes = db.Column(db.Text, nullable=True)
-    completed_tasks = db.Column(JSON)
+# --- Auth Routes ---
 
-# Replaces the tracker_memory.json file
-class TopicHistory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    topic = db.Column(db.String(100), nullable=False, index=True)
-    entry = db.Column(db.String(500), nullable=False)
+@app.route("/register", methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Your account has been created! You can now log in', 'success')
+        return redirect(url_for('login'))
+    return render_template('register.html', title='Register', form=form)
 
-# This command creates the above tables in your database if they don't already exist.
-# It's safe to run every time the app starts.
-with app.app_context():
-    db.create_all()
+@app.route("/login", methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=form.remember.data)
+            app.logger.info(f"User {user.username} logged in successfully.")
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('index'))
+        else:
+            app.logger.warning(f"Failed login attempt for username: {form.username.data}")
+            flash('Login Unsuccessful. Please check username and password', 'danger')
+    return render_template('login.html', title='Login', form=form)
+
+@app.route("/logout")
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+@app.route("/profile", methods=['GET', 'POST'])
+@login_required
+def profile():
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        if not current_user.check_password(form.old_password.data):
+            flash('Incorrect old password.', 'danger')
+        else:
+            current_user.set_password(form.new_password.data)
+            db.session.commit()
+            flash('Your password has been updated!', 'success')
+            return redirect(url_for('profile'))
+    return render_template('profile.html', title='Profile', form=form)
 
 
 # --- Main Page & Tracker Routes ---
@@ -45,20 +121,17 @@ with app.app_context():
 def index():
     return render_template('index.html')
 
-@app.route('/tracker')
-def tracker():
-    return render_template('tracker.html')
-
 # --- Dashboard & Progress Routes ---
 @app.route('/dashboard')
+@login_required
 def dashboard():
     return render_template('dashboard.html')
 
 @app.route('/progress')
+@login_required
 def progress():
-    """REFACTORED: Fetches all logs from the database instead of files."""
-    logs_from_db = DailyLog.query.order_by(DailyLog.log_date.desc()).all()
-    # Convert DB objects to the dictionary format your template expects
+    # REFACTORED: Fetch logs only for current user
+    logs_from_db = DailyLog.query.filter_by(user_id=current_user.id).order_by(DailyLog.log_date.desc()).all()
     logs = [
         {
             "date": log.log_date.strftime("%Y-%m-%d"),
@@ -68,34 +141,63 @@ def progress():
     ]
     return render_template("progress.html", logs=logs)
 
-@app.route('/ctf')
-def ctf_dashboard():
-    return render_template('ctf_dashboard.html')
+@app.route('/thm')
+@login_required
+def thm_dashboard():
+    # Fetch user's completed rooms
+    progress = UserProgress.query.filter_by(user_id=current_user.id, completed=True).all()
+    completed_rooms = {p.room_id for p in progress}
+    return render_template('thm.html', completed_rooms=completed_rooms)
 
 # --- API Endpoints ---
-# This endpoint now needs to fetch history from the DB before calling the AI
+
+@app.route('/api/toggle_room', methods=['POST'])
+@login_required
+def toggle_room():
+    data = request.json
+    room_id = data.get('room_id')
+    completed = data.get('completed')
+
+    if not room_id:
+        return jsonify({"error": "Room ID required"}), 400
+
+    progress = UserProgress.query.filter_by(user_id=current_user.id, room_id=room_id).first()
+
+    if not progress:
+        progress = UserProgress(user_id=current_user.id, room_id=room_id, completed=completed)
+        db.session.add(progress)
+    else:
+        progress.completed = completed
+    
+    db.session.commit()
+    return jsonify({"status": "success", "room_id": room_id, "completed": completed})
+
 @app.route("/next_suggestion", methods=["POST"])
+@login_required
 def next_suggestion():
     data = request.get_json()
     topic = data.get("topic")
     level = data.get("level", "Basic")
     
-    # Fetch recent history from the database to provide context to the AI
-    history_items = TopicHistory.query.filter_by(topic=topic.lower()).order_by(TopicHistory.id.desc()).limit(5).all()
-    history = [item.entry for item in reversed(history_items)] # Pass a simple list of strings
+    # Scoped to current user
+    history_items = TopicHistory.query.filter_by(user_id=current_user.id, topic=topic.lower()).order_by(TopicHistory.id.desc()).limit(5).all()
+    history = [item.entry for item in reversed(history_items)]
 
     suggestion = get_next_step(topic, history, level)
     
-    # Save the new suggestion to history so it's not repeated
     if suggestion and "AI is busy" not in suggestion:
-        new_history_entry = TopicHistory(topic=topic.lower(), entry=f"({level}) {suggestion}")
+        new_history_entry = TopicHistory(
+            topic=topic.lower(), 
+            entry=f"({level}) {suggestion}",
+            user_id=current_user.id
+        )
         db.session.add(new_history_entry)
         db.session.commit()
         
     return jsonify({"suggestion": suggestion})
 
-# This endpoint also now needs to fetch history from the DB
 @app.route('/get_suggestion', methods=['POST'])
+@login_required
 def get_suggestion():
     data = request.json
     topic = data.get('topic')
@@ -104,47 +206,51 @@ def get_suggestion():
     if not topic or not learning:
         return jsonify({"suggestion": "Topic and learning context are required."})
 
-    history_items = TopicHistory.query.filter_by(topic=topic.lower()).order_by(TopicHistory.id.desc()).limit(5).all()
+    # Scoped to current user
+    history_items = TopicHistory.query.filter_by(user_id=current_user.id, topic=topic.lower()).order_by(TopicHistory.id.desc()).limit(5).all()
     history = [item.entry for item in reversed(history_items)]
 
-    suggestion = get_ai_suggestion(topic, learning, history) # Pass history to the function
+    suggestion = get_ai_suggestion(topic, learning, history)
     return jsonify({"suggestion": suggestion})
 
 
 @app.route('/save_log', methods=['POST'])
+@login_required
 def save_log():
-    """REFACTORED: Saves a log entry to the database."""
     data = request.json
     date_str = data.get('date')
     log_date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
 
-    # Find if a log for this date already exists
-    log = DailyLog.query.filter_by(log_date=log_date_obj).first()
+    # Find log for this date AND this user
+    log = DailyLog.query.filter_by(log_date=log_date_obj, user_id=current_user.id).first()
 
     if not log:
-        # If it doesn't exist, create a new one
-        log = DailyLog(log_date=log_date_obj)
+        log = DailyLog(log_date=log_date_obj, user_id=current_user.id)
         db.session.add(log)
 
-    # Update the log's data
     log.notes = data.get("notes")
     log.completed_tasks = data.get("completed_tasks", {})
 
-    # Save the topic history (replaces update_topic_history)
+    # Save topic history scoped to user
     for topic, info in data.get("completed_tasks", {}).items():
         if info.get("done") and info.get("task"):
-            new_history_entry = TopicHistory(topic=topic.lower(), entry=info["task"])
+            new_history_entry = TopicHistory(
+                topic=topic.lower(), 
+                entry=info["task"],
+                user_id=current_user.id
+            )
             db.session.add(new_history_entry)
     
-    db.session.commit() # Commit all changes to the database
+    db.session.commit()
     return jsonify({"status": "success", "message": f"Log for {date_str} saved."})
 
 
 @app.route('/load_log/<date_str>')
+@login_required
 def load_log(date_str):
-    """REFACTORED: Loads a log entry from the database."""
     log_date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
-    log = DailyLog.query.filter_by(log_date=log_date_obj).first()
+    # Scope to user
+    log = DailyLog.query.filter_by(log_date=log_date_obj, user_id=current_user.id).first()
 
     if log:
         return jsonify({
@@ -156,25 +262,26 @@ def load_log(date_str):
 
 
 @app.route('/get_completed_htb')
+@login_required
 def get_completed_htb():
-    """REFACTORED: Fetches HTB history from the database."""
-    items = TopicHistory.query.filter_by(topic='htb').all()
+    items = TopicHistory.query.filter_by(topic='htb', user_id=current_user.id).all()
     completed_list = [item.entry for item in items]
     return jsonify({"completed": completed_list})
 
 
 @app.route('/get_completed_bandit')
+@login_required
 def get_completed_bandit():
-    """REFACTORED: Fetches Bandit history from the database."""
-    items = TopicHistory.query.filter_by(topic='bandit').all()
+    items = TopicHistory.query.filter_by(topic='bandit', user_id=current_user.id).all()
     completed_list = [item.entry for item in items]
     return jsonify({"completed": completed_list})
 
 
 @app.route('/analytics_data')
+@login_required
 def analytics_data():
-    """REFACTORED: Calculates analytics from database data."""
-    logs = DailyLog.query.order_by(DailyLog.log_date.asc()).all()
+    # Fetch logs ONLY for current user
+    logs = DailyLog.query.filter_by(user_id=current_user.id).order_by(DailyLog.log_date.asc()).all()
 
     if not logs:
         return jsonify({
@@ -185,9 +292,21 @@ def analytics_data():
     dates = [log.log_date.strftime("%Y-%m-%d") for log in logs]
     topic_counts = {}
     
-    # Count this month's activities
-    current_month = date.today().month
-    current_year = date.today().year
+    # Calculate strict date range for "This Month"
+    today = date.today()
+    start_of_month = today.replace(day=1)
+    if today.month == 12:
+        start_of_next_month = today.replace(year=today.year + 1, month=1, day=1)
+    else:
+        start_of_next_month = today.replace(month=today.month + 1, day=1)
+
+    # DEBUG LOGGING (Requested by user)
+    app.logger.info(f"--- Analytics Debug ---")
+    app.logger.info(f"today: {today}")
+    app.logger.info(f"start_of_month: {start_of_month}")
+    app.logger.info(f"start_of_next_month: {start_of_next_month}")
+    app.logger.info(f"All active dates: {dates}")
+
     this_month_count = 0
     
     for log in logs:
@@ -197,11 +316,13 @@ def analytics_data():
             if task:
                 topic_counts[key] = topic_counts.get(key, 0) + 1
         
-        # Count this month's logs
-        if log.log_date.month == current_month and log.log_date.year == current_year:
+        # Count this month's logs using strict date range
+        if start_of_month <= log.log_date < start_of_next_month:
             this_month_count += 1
+            
+    app.logger.info(f"Final this_month_count: {this_month_count}")
+    app.logger.info(f"--- End Debug ---")
 
-    # Streak Logic (existing code)
     longest_streak = 0
     current_streak = 0
     if logs:
@@ -215,7 +336,6 @@ def analytics_data():
                 streak = 1
         longest_streak = max(longest_streak, streak)
 
-        # Calculate current streak
         last_log_date = logs[-1].log_date
         today = date.today()
         if (today - last_log_date).days <= 1:
@@ -230,30 +350,5 @@ def analytics_data():
         "thisMonth": this_month_count
     })
 
-def run_backup_job():
-    """
-    This function is called by the scheduler to execute the backup script.
-    """
-    print("Scheduler triggered: Starting backup job...")
-    try:
-        # We run the backup.sh script using a subprocess
-        # The environment variables from Render will be available to this script
-        subprocess.run(["bash", "backup.sh"], check=True, capture_output=True, text=True)
-        print("Backup job completed successfully.")
-    except subprocess.CalledProcessError as e:
-        # Log any errors from the script
-        print(f"Backup job failed.")
-        print(f"Error output:\n{e.stderr}")
-
-# Initialize the scheduler to run in the background
-scheduler = BackgroundScheduler()
-# Schedule the run_backup_job to run every day at 05:05 UTC
-scheduler.add_job(run_backup_job, 'cron', hour=5, minute=5)
-# Start the scheduler
-scheduler.start()
-
-# --- App Execution ---
 if __name__ == '__main__':
-    # For local development, you might want debug=True
-    # For production on Render, debug MUST be False.
     app.run(debug=False, host='0.0.0.0', port=5000)

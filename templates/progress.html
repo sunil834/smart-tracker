@@ -3,29 +3,256 @@
 
 {% block title %}My Progress Log{% endblock %}
 
-{% block content %}
-    <h1>📘 My Progress Log</h1>
+{% block head_extra %}
+<style>
+    .theme-input {
+        background-color: var(--input-bg-color) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-color) !important;
+    }
+    .theme-input::placeholder {
+        color: var(--text-color-secondary) !important;
+        opacity: 0.8;
+    }
+    .theme-input:focus {
+        background-color: var(--input-bg-color) !important;
+        color: var(--text-color) !important;
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 8px rgba(0, 255, 135, 0.2) !important;
+    }
+    /* Specific fix for date icon color in some browsers */
+    .theme-input::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+    }
+    .showing-text {
+        color: var(--text-color) !important;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
 
-    {% for entry in logs %}
-        <section class="task-section" aria-labelledby="date-{{ loop.index }}">
-            <h3 id="date-{{ loop.index }}">{{ entry.date }}</h3>
-            {% if entry.notes %}
-                <p><strong>Notes:</strong> {{ entry.notes }}</p>
-            {% endif %}
-            <ul>
-                {% for key, val in entry.completed_tasks.items() %}
-                    <li>
-                        <strong>{{ key|capitalize }}:</strong>
-                        {{ val.task }} 
-                        {% if val.done %}<span role="img" aria-label="Completed">✅</span>{% endif %}
-                        {% if val.extra %}
-                            <p class="extra-notes">➕ <strong>Extra:</strong> {{ val.extra }}</p>
-                        {% endif %}
-                    </li>
-                {% endfor %}
-            </ul>
-        </section>
-    {% else %}
-        <p>No progress logs found. Start logging to see your progress here!</p>
-    {% endfor %}
+{% block content %}
+    <h1 class="mb-4">📘 My Progress Log</h1>
+
+    <!-- Filter & Search Controls -->
+    <div class="card mb-4" style="background-color: var(--surface-color); border: 1px solid var(--border-color);">
+        <div class="card-body">
+            <div class="row g-3">
+                <!-- Text Search -->
+                <div class="col-md-12">
+                    <label for="searchInput" class="form-label small" style="color: var(--primary-color); font-weight: bold;">🔍 Search Logs</label>
+                    <input type="text" id="searchInput" class="form-control theme-input" placeholder="Search tasks, notes, or dates..." style="background-color: var(--input-bg-color); color: var(--text-color); border: 1px solid var(--border-color);">
+                </div>
+
+                <!-- Date Range Start -->
+                <div class="col-md-4">
+                    <label for="startDate" class="form-label small" style="color: var(--primary-color); font-weight: bold;">📅 Start Date</label>
+                    <input type="date" id="startDate" class="form-control theme-input" style="background-color: var(--input-bg-color); color: var(--text-color); border: 1px solid var(--border-color);">
+                </div>
+
+                <!-- Date Range End -->
+                <div class="col-md-4">
+                    <label for="endDate" class="form-label small" style="color: var(--primary-color); font-weight: bold;">📅 End Date</label>
+                    <input type="date" id="endDate" class="form-control theme-input" style="background-color: var(--input-bg-color); color: var(--text-color); border: 1px solid var(--border-color);">
+                </div>
+
+                <!-- Quick Month Filter -->
+                <div class="col-md-4">
+                    <label for="monthFilter" class="form-label small" style="color: var(--primary-color); font-weight: bold;">🗓️ Quick Month</label>
+                    <select id="monthFilter" class="form-select theme-input" style="background-color: var(--input-bg-color); color: var(--text-color); border: 1px solid var(--border-color);">
+                        <option value="all">Select Month...</option>
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                
+                <!-- Buttons -->
+                <div class="col-12 text-end mt-3">
+                    <button id="resetBtn" class="btn btn-outline-secondary me-2" style="color: var(--text-color); border-color: var(--text-color-secondary);">Reset</button>
+                    <button id="searchBtn" class="btn btn-primary">Apply Filters</button>
+                </div>
+            </div>
+            <div id="filterError" class="text-danger mt-2 small d-none"></div>
+        </div>
+    </div>
+
+    <!-- Results Count -->
+    <p class="showing-text small mb-3">Showing <span id="visibleCount" style="color: var(--primary-color);">{{ logs|length }}</span> of {{ logs|length }} entries</p>
+
+    <!-- Logs Container -->
+    <div id="logsContainer">
+        {% for entry in logs %}
+            {% set log_month = entry.date[:7] %}
+            <!-- Included searchable text in a data attribute for speed -->
+            {% set searchable_text = entry.date ~ " " ~ (entry.notes or "") %}
+            {% for key, val in entry.completed_tasks.items() %}
+                {% set searchable_text = searchable_text ~ " " ~ key ~ " " ~ val.task ~ " " ~ (val.extra or "") %}
+            {% endfor %}
+
+            <section class="task-section log-entry" 
+                     data-date="{{ entry.date }}" 
+                     data-month="{{ log_month }}" 
+                     data-text="{{ searchable_text|lower }}"
+                     aria-labelledby="date-{{ loop.index }}">
+                
+                <h3 id="date-{{ loop.index }}" class="d-flex justify-content-between align-items-center">
+                    <span>{{ entry.date }}</span>
+                </h3>
+                
+                {% if entry.notes %}
+                    <div class="mb-3 p-2 border rounded" style="background: rgba(255,255,255,0.05);">
+                        <p class="mb-0"><strong>📝 Notes:</strong> {{ entry.notes }}</p>
+                    </div>
+                {% endif %}
+                
+                <ul class="list-unstyled">
+                    {% for key, val in entry.completed_tasks.items() %}
+                        <li class="mb-2">
+                            <strong style="color: var(--primary-color);">{{ key|replace('_', ' ')|title }}:</strong>
+                            <span class="text-light">{{ val.task }}</span>
+                            {% if val.done %}<span>✅</span>{% endif %}
+                            
+                            {% if val.extra %}
+                                <div class="extra-notes mt-1 ps-3 border-start border-secondary">
+                                    <small class="text-muted">➕ <strong>Extra:</strong> {{ val.extra }}</small>
+                                </div>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% else %}
+            <div class="text-center py-5">
+                <p class="lead text-muted">No progress logs found yet.</p>
+                <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">Start Logging</a>
+            </div>
+        {% endfor %}
+        
+        <!-- Empty State (hidden by default) -->
+        <div id="noResults" class="text-center py-5 d-none">
+            <p class="lead text-muted">No logs match your filters.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            const monthFilter = document.getElementById('monthFilter');
+            const searchBtn = document.getElementById('searchBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const logs = document.querySelectorAll('.log-entry');
+            const filterError = document.getElementById('filterError');
+            const visibleCountSpan = document.getElementById('visibleCount');
+            const noResultsDiv = document.getElementById('noResults');
+
+            // 1. Populate Month Filter
+            const uniqueMonths = new Set();
+            logs.forEach(log => uniqueMonths.add(log.getAttribute('data-month')));
+            const sortedMonths = Array.from(uniqueMonths).sort().reverse();
+            
+            sortedMonths.forEach(monthStr => {
+                const [year, month] = monthStr.split('-');
+                const dateObj = new Date(year, month - 1);
+                const label = dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                const option = document.createElement('option');
+                option.value = monthStr;
+                option.textContent = label;
+                monthFilter.appendChild(option);
+            });
+
+            // 2. Filter Logic
+            function applyFilters() {
+                const searchText = searchInput.value.toLowerCase().trim();
+                const startDateStr = startDateInput.value;
+                const endDateStr = endDateInput.value;
+                
+                // Clear errors
+                filterError.classList.add('d-none');
+                filterError.textContent = '';
+
+                // Date Validation
+                if (startDateStr && endDateStr && startDateStr > endDateStr) {
+                    filterError.textContent = 'Error: Start date cannot be after End date.';
+                    filterError.classList.remove('d-none');
+                    return;
+                }
+
+                let visibleCount = 0;
+
+                logs.forEach(log => {
+                    const logDate = log.getAttribute('data-date');
+                    const logText = log.getAttribute('data-text');
+                    let show = true;
+
+                    // Text Filter
+                    if (searchText && !logText.includes(searchText)) {
+                        show = false;
+                    }
+
+                    // Date Range Filter
+                    if (show) {
+                        if (startDateStr && logDate < startDateStr) show = false;
+                        if (endDateStr && logDate > endDateStr) show = false;
+                    }
+
+                    // Toggle Visibility
+                    if (show) {
+                        log.classList.remove('d-none');
+                        visibleCount++;
+                    } else {
+                        log.classList.add('d-none');
+                    }
+                });
+
+                // Update UI state
+                visibleCountSpan.textContent = visibleCount;
+                if (visibleCount === 0) {
+                    noResultsDiv.classList.remove('d-none');
+                } else {
+                    noResultsDiv.classList.add('d-none');
+                }
+            }
+
+            // 3. Event Listeners
+            searchBtn.addEventListener('click', applyFilters);
+            
+            // Allow "Enter" key in search input to trigger search
+            searchInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') applyFilters();
+            });
+
+            // Quick Month Filter Action
+            monthFilter.addEventListener('change', function() {
+                const val = this.value;
+                if (val !== 'all') {
+                    // Calculate start/end dates for the selected month
+                    const [year, month] = val.split('-').map(Number);
+                    
+                    // Format as YYYY-MM-DD (local time issues avoided by manual string)
+                    const sMonth = String(month).padStart(2, '0');
+                    const firstDay = `${year}-${sMonth}-01`;
+                    
+                    // Last day calculation
+                    const lastDate = new Date(year, month, 0).getDate();
+                    const lastDay = `${year}-${sMonth}-${lastDate}`;
+
+                    startDateInput.value = firstDay;
+                    endDateInput.value = lastDay;
+                } else {
+                    startDateInput.value = '';
+                    endDateInput.value = '';
+                }
+                applyFilters();
+            });
+
+            resetBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                startDateInput.value = '';
+                endDateInput.value = '';
+                monthFilter.value = 'all';
+                applyFilters();
+            });
+        });
+    </script>
 {% endblock %}

@@ -4,4 +4,9 @@ python-dotenv
 gunicorn
 Flask-SQLAlchemy
 psycopg2-binary
-APScheduler
+flask-login
+flask-migrate
+flask-wtf
+wtforms
+email-validator
+flask-limiter

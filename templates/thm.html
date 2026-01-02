@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+
+{% block title %}TryHackMe Learning Guide{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="text-center mb-5">
+        <h1 style="color: var(--primary-color);">Free TryHackMe Training: The Ultimate Guide for Beginners</h1>
+        
+        <!-- View Toggle -->
+        <div class="btn-group mt-3" role="group" aria-label="View Toggle">
+            <button type="button" class="btn btn-outline-success active" id="btn-guide-view">
+                📘 Learning Guide
+            </button>
+            <button type="button" class="btn btn-outline-success" id="btn-mindmap-view">
+                🧠 Free Path
+            </button>
+        </div>
+    </div>
+    
+    {% set pdf_tree_data = [
+        ('Intro Rooms', [
+            ('hello', 'Welcome'), ('howtousetryhackme', 'How to use TryHackMe'), ('welcome', 'Welcome'), ('tutorial', 'Tutorial'),
+            ('openvpn', 'OpenVPN'), ('beginnerpathintro', 'Learning Cyber Security'), ('startingoutincybersec', 'Starting Out In Cyber Sec'),
+            ('introtoresearch', 'Introductory Researching'), ('ccpentesting', 'CC: Pen Testing'), ('catregex', 'Regular expressions')
+        ]),
+        ('Linux Fundamentals', [
+            ('zthlinux', 'Learn Linux'), ('linuxmodules', 'Linux Modules'), ('linuxfundamentalspart1', 'Linux Fundamentals Part 1'),
+            ('linuxfundamentalspart2', 'Linux Fundamentals Part 2'), ('linuxfundamentalspart3', 'Linux Fundamentals Part 3')
+        ]),
+        ('Windows Fundamentals', [
+            ('windowsfundamentals1xbx', 'Windows Fundamentals 1'), ('windowsfundamentals2x0x', 'Windows Fundamentals 2'), ('windowsfundamentals3xzx', 'Windows Fundamentals 3')
+        ]),
+        ('Basics Rooms', [
+            ('basicpentestingjt', 'Basic Pentesting'), ('pentestingfundamentals', 'Pentesting Fundamentals'), ('principlesofsecurity', 'Principles of Security'),
+            ('hackermethodology', 'The Hacker Methodology'), ('physicalsecurityintro', 'Physical Security Intro'), ('linuxstrengthtraining', 'Linux Strength Training'),
+            ('openvas', 'OpenVAS'), ('iso27001', 'ISO27001'), ('ultratech1', 'UltraTech')
+        ]),
+        ('Recon', [
+            ('passiverecon', 'Passive Reconnaissance'), ('activerecon', 'Active Reconnaissance'), ('contentdiscovery', 'Content Discovery'),
+            ('ohsint', 'OhSINT'), ('shodan', 'Shodan.io'), ('googledorking', 'Google Dorking'), ('webosint', 'WebOSINT'),
+            ('sakura', 'Sakura Room'), ('redteamrecon', 'Red Team Recon'), ('searchlightosint', 'Searchlight - IMINT')
+        ]),
+        ('Scripting', [
+            ('pythonbasics', 'Python Basics'), ('pythonplayground', 'Python Playground'), ('intropocscripting', 'Intro PoC Scripting'),
+            ('peakhill', 'Peak Hill'), ('javascriptbasics', 'JavaScript Basics'), ('bashscripting', 'Bash Scripting'),
+            ('rust', 'Learn Rust'), ('yara', 'Why Subscribe')
+        ]),
+        ('Networking', [
+            ('introtonetworking', 'Introductory Networking'), ('whatisnetworking', 'What is Networking?'), ('bpnetworking', 'Networking'),
+            ('introtolan', 'Intro to LAN'), ('httpindetail', 'HTTP in detail'), ('dnsindetail', 'DNS in detail'), ('rfirmware', 'Dumping Router Firmware')
+        ]),
+        ('Tooling', [
+            ('metasploitintro', 'Metasploit: Introduction'), ('rpmetasploit', 'Metasploit'), ('rptmux', 'tmux'), ('tmuxremux', 'REmux The Tmux'),
+            ('hydra', 'Hydra'), ('rpsublist3r', 'Sublist3r'), ('toolboxvim', 'Toolbox: Vim'), ('learnowaspzap', 'Introduction to OWASP ZAP'),
+            ('phishinghiddeneye', 'Phishing: HiddenEye'), ('rustscan', 'RustScan'), ('rpnessusredux', 'Nessus'), ('nmap01', 'Nmap Live Host Discovery'),
+            ('furthernmap', 'Nmap'), ('tshark', 'TShark'), ('ffuf', 'ffuf'), ('burpsuitebasics', 'Burp Suite: The Basics'), ('burpsuiterepeater', 'Burp Suite: Repeater')
+        ]),
+        ('Crypto & Hashes', [
+            ('cryptographyfordummies', 'Cryptography for Dummies'), ('crackthehash', 'Crack the hash'), ('crackthehashlevel2', 'Crack The Hash Level 2'),
+            ('agentsudoctf', 'Agent Sudo'), ('bruteit', 'Brute It')
+        ]),
+        ('Steganography', [
+            ('ccstego', 'CC: Steganography'), ('cicada3301vol1', 'Cicada-3301 Vol:1'), ('musicalstego', 'Musical Stego'),
+            ('madness', 'Madness'), ('psychobreak', 'Psycho Break'), ('unstabletwin', 'Unstable Twin')
+        ]),
+        ('Web', [
+            ('httpindetail', 'HTTP in detail'), ('webappsec101', 'WebAppSec 101'), ('vulnerabilities101', 'Vulnerabilities 101'),
+            ('walkinganapplication', 'Walking An Application'), ('owasptop10', 'OWASP Top 10'), ('owaspjuiceshop', 'OWASP Juice Shop'),
+            ('rpwebscanning', 'Web Scanning'), ('owaspmutillidae', 'OWASP Mutillidae II'), ('webgoat', 'WebGOAT'), ('dvwa', 'DVWA'),
+            ('vulnnet1', 'VulnNet'), ('juicydetails', 'Juicy Details'), ('vulnversity', 'Vulnversity'), ('injection', 'Injection'),
+            ('lfibasics', 'LFI Basics'), ('inclusion', 'Inclusion'), ('sqlilab', 'SQL Injection Lab'), ('learnssti', 'SSTI'),
+            ('sqlinjectionlm', 'SQL Injection'), ('basicpentestingjt', 'Basic Pentesting'), ('owaspjuiceshop', 'OWASP Juice Shop'),
+            ('ignite', 'Ignite'), ('overpass', 'Overpass'), ('yearoftherabbit', 'Year of the Rabbit'), ('bsidesgtdevelpy', 'Develpy'),
+            ('jackofalltrades', 'Jack-of-All-Trades'), ('bolt', 'Bolt')
+        ]),
+        ('Android', [
+            ('androidhacking101', 'Android Hacking 101')
+        ]),
+        ('Forensics', [
+            ('linuxserverforensics', 'Linux Server Forensics'), ('forensics', 'Forensics'), ('memoryforensics', 'Memory Forensics'),
+            ('bpvolatility', 'Volatility'), ('autopsy2ze0', 'Disk Analysis & Autopsy')
+        ]),
+        ('Wifi Hacking', [
+            ('wifihacking101', 'Wifi Hacking 101')
+        ]),
+        ('Reverse Engineering', [
+            ('introtox8664', 'Intro to x86-64'), ('win64assembly', 'Windows x64 Assembly'), ('reverseengineering', 'Reverse Engineering'),
+            ('reverselfiles', 'Reversing ELF'), ('jvmreverseengineering', 'JVM Reverse Engineering'), ('ccradare2', 'CC: Radare2'),
+            ('ccghidra', 'CC: Ghidra'), ('aster', 'Aster'), ('classicpasswd', 'Classic Passwd'), ('reloaded', 'REloaded')
+        ]),
+        ('Malware Analysis', [
+            ('historyofmalware', 'History of Malware'), ('malmalintroductory', 'MAL: Malware Introductory'), ('basicmalwarere', 'Basic Malware RE'),
+            ('malresearching', 'MAL: Researching'), ('mma', 'Mobile Malware Analysis'), ('c2carnage', 'Carnage'), ('dunklematerieptxc9', 'Dunkle Materie')
+        ]),
+        ('Privilege Escalation', [
+            ('linprivesc', 'Linux Privilege Escalation'), ('linuxprivesc', 'Linux PrivEsc'), ('linuxprivescarena', 'Linux PrivEsc Arena'),
+            ('windows10privesc', 'Windows PrivEsc'), ('windowsprivescarena', 'Windows PrivEsc Arena'), ('linuxagency', 'Linux Agency'),
+            ('sudovulnsbypass', 'Sudo Security Bypass'), ('sudovulnsbof', 'Sudo Buffer Overflow'), ('blaster', 'Blaster'), ('ignite', 'Ignite'),
+            ('kenobi', 'Kenobi'), ('c4ptur3th3fl4g', 'c4ptur3-th3-fl4g'), ('picklerick', 'Pickle Rick')
+        ]),
+        ('Windows', [
+            ('investigatingwindows', 'Investigating Windows'), ('investigatingwindows2', 'Investigating Windows 2.0'),
+            ('investigatingwindows3', 'Investigating Windows 3.x'), ('blueprint', 'Blueprint'), ('vulnnetactive', 'VulnNet: Active'),
+            ('anthem', 'Anthem'), ('blue', 'Blue')
+        ]),
+        ('Active Directory', [
+            ('attacktivedirectory', 'Attacktive Directory'), ('postexploit', 'Post-Exploitation Basics'), ('ustoun', 'USTOUN'),
+            ('enterprise', 'Enterprise'), ('raz0rblack', 'RazorBlack')
+        ]),
+        ('PCAP Analysis', [
+            ('h4cked', 'h4cked'), ('c2carnage', 'Carnage'), ('cct2019', 'CCT2019'), ('overpass2hacked', 'Overpass 2 - Hacked')
+        ]),
+        ('Buffer Overflow', [
+            ('bufferoverflowprep', 'Buffer Overflow Prep'), ('gatekeeper', 'Gatekeeper'), ('chronicle', 'Chronicle'), ('introtopwntools', 'Intro To Pwntools')
+        ]),
+        ('Easy CTF', [
+            ('gamingserver', 'GamingServer'), ('overlayfs', 'OverlayFS - CVE-2021-3493'), ('psychobreak', 'Psycho Break'),
+            ('cowboyhacker', 'Bounty Hacker'), ('ctf', 'Fowsniff CTF'), ('rrootme', 'RootMe'), ('attackerkb', 'AttackerKB'),
+            ('picklerick', 'Pickle Rick'), ('c4ptur3th3fl4g', 'c4ptur3-th3-fl4g'), ('bsidesgtlibrary', 'Library'), ('bsidesgtthompson', 'Thompson'),
+            ('easyctf', 'Simple CTF'), ('lazyadmin', 'LazyAdmin'), ('bsidesgtanonforce', 'Anonforce'), ('ignite', 'Ignite'), ('wgelctf', 'Wgel CTF'),
+            ('kenobi', 'Kenobi'), ('bsidesgtdav', 'Dav'), ('ninjaskills', 'Ninja Skills'), ('ice', 'Ice'), ('lianyu', 'Lian_Yu'), ('thecodcaper', 'The Cod Caper'),
+            ('blaster', 'Blaster'), ('encryptioncrypto101', 'Encryption - Crypto 101'), ('brooklynninenine', 'Brooklyn Nine Nine'),
+            ('yearoftherabbit', 'Year of the Rabbit'), ('jackofalltrades', 'Jack-of-All-Trades'), ('madness', 'Madness'), ('kothfoodctf', 'KoTH Food CTF'),
+            ('easypeasyctf', 'Easy Peasy'), ('tonythetiger', 'Tony the Tiger'), ('ctfcollectionvol1', 'CTF collection Vol.1'), ('smaggrotto', 'Smag Grotto'),
+            ('couch', 'Couch'), ('source', 'Source'), ('overpass', 'Overpass'), ('pokemon', 'Gotta Catch\'em All!'), ('bolt', 'Bolt'),
+            ('overpass2hacked', 'Overpass 2 - Hacked'), ('kiba', 'kiba'), ('poster', 'Poster'), ('chocolatefactory', 'Chocolate Factory'),
+            ('startup', 'Startup'), ('chillhack', 'Chill Hack'), ('colddboxeasy', 'ColddBox: Easy'), ('glitch', 'GLITCH'), ('allinonemj', 'All in One'),
+            ('archangel', 'Archangel'), ('cyborgt8', 'Cyborg'), ('lunizzctfnd', 'Lunizz CTF'), ('badbyte', 'Badbyte'), ('teamcw', 'Team'),
+            ('vulnnetnode', 'VulnNet: Node'), ('vulnnetinternal', 'VulnNet: Internal'), ('atlas', 'Atlas'), ('vulnnetroasted', 'VulnNet: Roasted'),
+            ('catpictures', 'Cat Pictures'), ('mustacchio', 'Mustacchio')
+        ]),
+        ('Medium CTF', [
+            ('mrrobot', 'Mr Robot CTF'), ('goldeneye', 'GoldenEye'), ('stuxctf', 'StuxCTF'), ('boilerctf2', 'Boiler CTF'), ('jokerctf', 'HA Joker CTF'),
+            ('biohazard', 'Biohazard'), ('breakit', 'Break it'), ('willow', 'Willow'), ('marketplace', 'The Marketplace'), ('nax', 'Nax'),
+            ('mindgames', 'Mindgames'), ('anonymous', 'Anonymous'), ('blog', 'Blog'), ('wonderland', 'Wonderland'), ('0day', '0day'),
+            ('bsidesgtdevelpy', 'Develpy'), ('ctfcollectionvol2', 'CTF collection Vol.2'), ('cmess', 'CMesS'), ('dejavu', 'Deja Vu'),
+            ('hackernote', 'hackerNote'), ('dogcat', 'dogcat'), ('convertmyvideo', 'ConvertMyVideo'), ('kothhackers', 'KoTH Hackers'),
+            ('revenge', 'Revenge'), ('harder', 'harder'), ('haskhell', 'HaskHell'), ('undiscoveredup', 'Undiscovered'), ('breakoutthecage1', 'Break Out The Cage'),
+            ('theimpossiblechallenge', 'The Impossible Challenge'), ('lookingglass', 'Looking Glass'), ('recovery', 'Recovery'), ('relevant', 'Relevant'),
+            ('ghizerctf', 'Ghizer'), ('mnemonic', 'Mnemonic'), ('wwbuddy', 'WWBuddy'), ('theblobblog', 'The Blob Blog'), ('cooctusadventures', 'Cooctus Stories'),
+            ('ctfonepiece65', 'One Piece'), ('toc2', 'toc2'), ('nerdherd', 'NerdHerd'), ('kuberneteschalltdi2020', 'Kubernetes Chall TDI 2020'),
+            ('theserverfromhell', 'The Server From Hell'), ('jacobtheboss', 'Jacob the Boss'), ('unbakedpie', 'Unbaked Pie'), ('bookstoreoc', 'Bookstore'),
+            ('overpass3hosting', 'Overpass 3 - Hosting'), ('battery', 'battery'), ('madeyescastle', 'Madeye\'s Castle'), ('enpass', 'En-pass'),
+            ('sustah', 'Sustah'), ('somesint', 'KaffeeSec - SoMeSINT'), ('tokyoghoul666', 'Tokyo Ghoul'), ('watcher', 'Watcher'), ('broker', 'broker'),
+            ('inferno', 'Inferno'), ('vulnnetdotpy', 'VulnNet: dotpy'), ('wekorra', 'Wekor'), ('pylonzf', 'pyLon'), ('thegreatescape', 'The Great Escape'),
+            ('safezone', 'SafeZone'), ('nahamstore', 'NahamStore'), ('sweettoothinc', 'Sweettooth Inc.'), ('cmspit', 'CMSpit'), ('superspamr', 'Super-Spam'),
+            ('thatstheticket', 'That\'s The Ticket'), ('debug', 'Debug'), ('redstoneonecarat', 'Red Stone One Carat'), ('coldvvars', 'Cold VVars'),
+            ('metamorphosis', 'Metamorphosis'), ('sqhell', 'SQHell'), ('fortress', 'Fortress'), ('cybercrafted', 'CyberCrafted'), ('road', 'Road')
+        ]),
+        ('Hard CTF', [
+            ('motunui', 'Motunui'), ('spring', 'Spring'), ('brainpan', 'Brainpan 1'), ('borderlands', 'Borderlands'), ('hc0nchristmasctf', 'hc0n Christmas CTF'),
+            ('dailybugle', 'Daily Bugle'), ('retro', 'Retro'), ('jeff', 'Jeff'), ('racetrackbank', 'Racetrack Bank'), ('davesblog', 'Dave\'s Blog'),
+            ('cherryblossom', 'CherryBlossom'), ('cct2019', 'CCT2019'), ('ironcorp', 'Iron Corp'), ('carpediem1', 'Carpe Diem 1'), ('ra', 'Ra'),
+            ('yotf', 'Year of the Fox'), ('forbusinessreasons', 'For Business Reasons'), ('anonymousplayground', 'Anonymous Playground'),
+            ('misguidedghosts', 'Misguided Ghosts'), ('theseus', 'Theseus'), ('internal', 'Internal'), ('yearofthedog', 'Year of the Dog'),
+            ('inacave', 'You\'re in a cave'), ('yearoftheowl', 'Year of the Owl'), ('yearofthepig', 'Year of the Pig'), ('envizon', 'envizon'),
+            ('gamebuzz', 'GameBuzz'), ('fusioncorp', 'Fusion Corp'), ('crocccrew', 'Crocc Crew'), ('uranium', 'Uranium CTF'),
+            ('yearofthejellyfish', 'Year of the Jellyfish'), ('rocket', 'Rocket'), ('squidgameroom', 'Squid Game'), ('enterprize', 'EnterPrize'),
+            ('adana', 'Different CTF'), ('vulnnetdotjar', 'VulnNet: dotjar'), ('m4tr1xexitdenied', 'M4tr1x: Exit Denied'), ('shaker', 'Shaker')
+        ]),
+        ('Misc', [
+            ('django', 'Introduction to Django'), ('githappens', 'Git Happens'), ('meltdownexplained', 'Meltdown Explained'), ('bpsplunk', 'Splunk'),
+            ('linuxbackdoors', 'Linux Backdoors'), ('jupyter101', 'Jupyter 101'), ('geolocatingimages', 'Geolocating Images'), ('torforbeginners', 'Tor'),
+            ('tomghost', 'tomghost'), ('dllhijacking', 'DLL HIJACKING'), ('iotintro', 'Intro to IoT Pentesting'), ('attackingics1', 'Attacking ICS Plant #1'),
+            ('attackingics2', 'Attacking ICS Plant #2'), ('printerhacking101', 'Printer Hacking 101'), ('dnsmanipulation', 'DNS Manipulation'),
+            ('flask', 'Introduction to Flask'), ('mitre', 'MITRE'), ('magician', 'magician'), ('jpgchat', 'JPGChat'), ('sudovulnssamedit', 'Baron Samedit'),
+            ('cve202141773', 'CVE-2021-41773/42013'), ('binaryheaven', 'Binary Heaven'), ('gitandcrumpets', 'Git and Crumpets'), ('polkit', 'Polkit: CVE-2021-3560'),
+            ('hipflask', 'Hip Flask'), ('bypassdisablefunctions', 'Bypass Disable Functions'), ('wordpresscve202129447', 'Wordpress: CVE-2021-29447'),
+            ('linuxfunctionhooking', 'Linux Function Hooking'), ('revilcorp', 'REvil Corp'), ('sudovulnsbof', 'Sudo Buffer Overflow'),
+            ('sudovulnsbypass', 'Sudo Security Bypass'), ('solar', 'Solar, exploiting log4j'), ('contiransomwarehgh', 'Conti'), ('dirtypipe', 'Dirty Pipe: CVE-2022-0847'),
+            ('thefindcommand', 'The find command')
+        ]),
+        ('Special Events', [
+            ('learncyberin25days', '25 Days of Cyber Security'), ('25daysofchristmas', 'Advent of Cyber 1 [2019]'), ('adventofcyber2', 'Advent of Cyber 2 [2020]'),
+            ('adventofcyber3', 'Advent of Cyber 3 (2021)'), ('adventofcyber4', 'Advent of Cyber 2022'), ('cyberweek2021', 'Cyber Scotland 2021'),
+            ('hackerofthehill', 'Hacker of the Hill #1'), ('tickets1', 'Learn and win prizes'), ('tickets2', 'Learn and win prizes #2')
+        ])
+    ] %} 
+
+    <!-- ==============================================
+         VIEW 1: LEARNING GUIDE (TREE MAP FROM PDF)
+         ============================================== -->
+    <div id="guide-view">
+        {% include 'thm_guide_view.html' %}
+    </div>
+
+    <!-- ============================================== 
+         VIEW 2: FREE MIND MAP (HORIZONTAL TREE - LOCKED)
+         ============================================== -->
+    <div id="mindmap-view" class="d-none">
+        {% include 'thm_mindmap_visual.html' %}
+    </div>
+
+</div>
+
+<style>
+    /* Shared Styles */
+    .neon-link-text {
+        color: var(--primary-color) !important;
+        transition: all 0.3s ease;
+    }
+    .neon-link-text:hover {
+        color: var(--primary-color-hover) !important;
+        text-shadow: 0 0 5px var(--primary-color);
+        padding-left: 5px;
+    }
+    .text-muted {
+        color: var(--text-color-secondary) !important;
+        opacity: 1 !important;
+    }
+    
+    /* Checkbox Styling */
+    .room-checkbox {
+        width: 1.2em;
+        height: 1.2em;
+        background-color: var(--input-bg-color);
+        border: 1px solid var(--primary-color);
+        cursor: pointer;
+        margin-right: 10px;
+    }
+    .room-checkbox:checked {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    /* --- VIEW 1: VERTICAL TREE LAYOUT --- */
+    .vertical-tree {
+        padding: 20px;
+        text-align: left;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    .vertical-tree .tree, .vertical-tree .tree ul, .vertical-tree .tree li {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        position: relative;
+    }
+    .vertical-tree .tree ul {
+        margin-left: 20px;
+    }
+    .vertical-tree .tree li {
+        margin: 0;
+        padding: 5px 0 5px 20px;
+        line-height: 2em;
+        position: relative;
+    }
+    
+    /* Vertical line */
+    .vertical-tree .tree li::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 100%;
+        border-left: 1px solid var(--border-color-light);
+    }
+    
+    /* Horizontal line connector */
+    .vertical-tree .tree li::after {
+        content: "";
+        position: absolute;
+        top: 1.1em;
+        left: 0;
+        width: 20px;
+        height: 0;
+        border-top: 1px solid var(--border-color-light);
+    }
+    
+    /* Remove vertical line for last child */
+    .vertical-tree .tree li:last-child::before {
+        height: 1.1em;
+    }
+    
+    /* --- VIEW 2: HORIZONTAL MIND MAP LAYOUT (LOCKED) --- */
+    .mindmap-wrapper {
+        overflow-x: auto;
+        padding: 40px;
+        text-align: center;
+        background-color: var(--surface-color);
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        min-height: 600px;
+    }
+    .tf-tree {
+        font-size: 12px;
+        display: inline-block;
+    }
+    .tf-tree ul {
+        display: flex;
+        flex-direction: column; /* Force vertical stacking */
+        align-items: center;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        position: relative;
+    }
+    .tf-tree li {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        padding: 20px 0;
+    }
+
+    /* Vertical Spine Line */
+    .tf-tree li::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        border-left: 2px solid var(--border-color-light);
+        z-index: 1;
+    }
+    /* Hide top line for root */
+    .tf-tree > ul > li::before {
+        top: 50%;
+    }
+    /* Hide bottom line for last child */
+    .tf-tree li:last-child::before {
+        bottom: 50%;
+    }
+
+    .tf-nc {
+        border: 1px solid var(--border-color);
+        padding: 10px 20px;
+        background-color: var(--input-bg-color);
+        border-radius: 5px;
+        position: relative;
+        z-index: 2;
+        transition: all 0.3s;
+        min-width: 150px;
+        margin: 5px 0;
+    }
+    
+    .root-node {
+        background-color: var(--primary-color) !important;
+        color: var(--bg-color) !important;
+        font-weight: 900;
+        font-size: 1.2rem;
+        box-shadow: 0 0 15px var(--primary-color);
+    }
+
+    .level-node {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        font-weight: bold;
+        background-color: var(--surface-color-light);
+    }
+
+    .room-node {
+        font-size: 0.9rem;
+        border-color: var(--border-color-light);
+    }
+    .room-node:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 8px var(--primary-color);
+    }
+
+    .node-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .node-content a {
+        color: var(--text-color);
+        text-decoration: none;
+    }
+    .node-content a:hover {
+        color: var(--primary-color);
+    }
+
+    /* Shared Node Styles */
+    .tree span, .mindmap-tree span {
+        border: 1px solid var(--border-color);
+        padding: 5px 12px;
+        text-decoration: none;
+        color: var(--text-color);
+        font-family: var(--font-family);
+        font-size: 13px;
+        display: inline-block;
+        border-radius: 5px;
+        background: var(--surface-color);
+        transition: all 0.3s;
+    }
+    .tree span a, .mindmap-tree span a {
+        color: var(--text-color);
+        text-decoration: none;
+    }
+    .tree span:hover, .mindmap-tree span:hover {
+        background: var(--surface-color-light);
+        border-color: var(--primary-color);
+        box-shadow: 0 0 10px var(--primary-color);
+    }
+    .tree span:hover a, .mindmap-tree span:hover a {
+        color: var(--primary-color);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Toggle Logic
+        const btnGuide = document.getElementById('btn-guide-view');
+        const btnMindMap = document.getElementById('btn-mindmap-view');
+        
+        const viewGuide = document.getElementById('guide-view');
+        const viewMindMap = document.getElementById('mindmap-view');
+
+        function setActive(btn, view) {
+            btnGuide.classList.remove('active');
+            btnMindMap.classList.remove('active');
+            viewGuide.classList.add('d-none');
+            viewMindMap.classList.add('d-none');
+            
+            btn.classList.add('active');
+            view.classList.remove('d-none');
+        }
+
+        btnGuide.addEventListener('click', () => setActive(btnGuide, viewGuide));
+        btnMindMap.addEventListener('click', () => setActive(btnMindMap, viewMindMap));
+
+        // --- Progress & Strikethrough Logic ---
+
+        function calculateViewProgress(containerId, textId, barId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            // Get all checkboxes within this specific view container
+            const checkboxes = container.querySelectorAll('.room-checkbox');
+            const total = checkboxes.length;
+            let completed = 0;
+
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    completed++;
+                }
+            });
+
+            const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+            // Update UI for this view
+            const textEl = document.getElementById(textId);
+            const barEl = document.getElementById(barId);
+            
+            if (textEl) textEl.innerText = `Completed ${completed} / ${total} rooms`;
+            if (barEl) {
+                barEl.style.width = `${percent}%`;
+                barEl.innerText = `${percent}%`;
+            }
+        }
+
+        function updateAllProgress() {
+            // Calculate Guide View Progress
+            calculateViewProgress('guide-view', 'guide-progress-text', 'guide-progress-bar');
+            
+            // Calculate Mindmap View Progress
+            calculateViewProgress('mindmap-view', 'mindmap-progress-text', 'mindmap-progress-bar');
+        }
+
+        function updateVisuals(checkbox) {
+            const isChecked = checkbox.checked;
+            const roomId = checkbox.getAttribute('data-room-id');
+            
+            // Sync all checkboxes for this room globally (across both views)
+            document.querySelectorAll(`.room-checkbox[data-room-id="${roomId}"]`).forEach(cb => {
+                cb.checked = isChecked;
+                
+                // Strikethrough Logic
+                const sibling = cb.nextElementSibling;
+                if (sibling) {
+                    if (sibling.tagName === 'A') {
+                        // Mindmap view style
+                        if (isChecked) sibling.classList.add('completed-text');
+                        else sibling.classList.remove('completed-text');
+                    } else if (sibling.classList.contains('room-node')) {
+                        // Guide view style
+                        const link = sibling.querySelector('a');
+                        if (link) {
+                            if (isChecked) link.classList.add('completed-text');
+                            else link.classList.remove('completed-text');
+                        }
+                    }
+                }
+            });
+            
+            // Recalculate progress for both views since checking a box might affect both
+            updateAllProgress();
+        }
+
+        // Initialize
+        const checkboxes = document.querySelectorAll('.room-checkbox');
+        checkboxes.forEach(box => {
+            // Apply initial visual state (strikethrough)
+            // We only need to do this once per unique room ID really, but doing it for all is safe
+            const isChecked = box.checked;
+            const sibling = box.nextElementSibling;
+            if (sibling) {
+                 if (sibling.tagName === 'A') {
+                    if (isChecked) sibling.classList.add('completed-text');
+                } else if (sibling.classList.contains('room-node')) {
+                    const link = sibling.querySelector('a');
+                    if (link && isChecked) link.classList.add('completed-text');
+                }
+            }
+
+            box.addEventListener('change', async (e) => {
+                const roomId = e.target.getAttribute('data-room-id');
+                const isChecked = e.target.checked;
+                
+                // Optimistic Update
+                updateVisuals(e.target);
+                
+                try {
+                    const response = await fetch('/api/toggle_room', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ room_id: roomId, completed: isChecked })
+                    });
+                    
+                    if (!response.ok) { 
+                        throw new Error('API Failed');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    // Revert on error
+                    e.target.checked = !isChecked;
+                    updateVisuals(e.target);
+                    alert('Failed to save progress. Please check your connection.');
+                }
+            });
+        });
+        
+        // Initial calculation
+        updateAllProgress();
+    });
+</script>
+{% endblock %}

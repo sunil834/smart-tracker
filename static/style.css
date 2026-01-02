@@ -10,6 +10,16 @@
     --input-bg-color: #2a2a2a;
     --primary-color: #00ff87;
     --primary-color-hover: #00e676;
+    --secondary-color: #ff9800; /* Orange for topic/level headings */
+    --level-1: #3498db; /* Blue */
+    --level-2: #e74c3c; /* Red */
+    --level-3: #9b59b6; /* Purple */
+    --level-4: #f1c40f; /* Yellow */
+    --level-5: #1abc9c; /* Teal */
+    --level-6: #34495e; /* Navy */
+    --level-7: #e67e22; /* Dark Orange */
+    --level-8: #2ecc71; /* Green */
+    --level-9: #7f8c8d; /* Grey */
     --text-color: #e0e0e0;
     --text-color-secondary: #b0b0b0;
     --border-color: #333;
@@ -47,7 +57,7 @@ p {
 /* For the 2-column main page (index.html) */
 .grid-container {
     display: grid;
-    grid-template-columns: 1fr 2.5fr; /* Sidebar : Main Content ratio */
+    grid-template-columns: 1fr 2.5fr;
     gap: 40px;
     width: 100%;
     max-width: 1200px;
@@ -63,7 +73,7 @@ p {
     width: 90%;
     max-width: 800px;
     border: 1px solid var(--border-color);
-    margin: 20px auto; /* Center container for these pages */
+    margin: 20px auto;
 }
 
 /* =============================================
@@ -135,7 +145,7 @@ h3 {
 }
 
 
-/* --- Task Sections (for form and progress page) --- */
+/* --- Task Sections --- */
 .task-section {
     background-color: var(--surface-color-light);
     padding: 20px;
@@ -144,12 +154,6 @@ h3 {
     border-left: 4px solid var(--primary-color);
 }
 
-/* --- Charting (for dashboard page) --- */
-.chart-container {
-    margin-bottom: 2rem;
-}
-
-/* --- Progress Log List (for progress page) --- */
 .task-section ul {
     list-style-type: none;
     padding-left: 5px;
@@ -197,30 +201,55 @@ form label {
     border-radius: 5px;
     font-family: var(--font-family);
     font-size: 1em;
+    resize: none; /* Remove manual resize handle */
+    overflow-y: hidden; /* Hide scrollbar for auto-grow */
+    min-height: 45px;
+    line-height: 1.5;
+    white-space: pre-wrap; /* Ensure text wraps */
+    word-wrap: break-word; /* Break long words if needed */
 }
 .task-input::placeholder, textarea::placeholder {
     color: #666;
 }
 
-textarea {
-    min-height: 80px;
-    resize: vertical;
+.auto-grow {
+    transition: height 0.1s ease;
+    box-sizing: border-box !important;
 }
 
-.completion-group {
+/* Clickable Completion Container */
+.completion-container {
+    cursor: pointer;
+    padding: 8px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: var(--input-bg-color);
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-top: 20px;
+    gap: 8px;
+    user-select: none;
 }
-.completion-group label {
-    margin: 0; /* Override default label margin */
-    font-size: 1em;
-    color: var(--text-color);
+
+.completion-container:hover {
+    background-color: var(--surface-color-light);
+    border-color: var(--primary-color);
 }
-.completion-checkbox {
-    transform: scale(1.3);
-    accent-color: var(--primary-color); /* Modern way to color checkboxes */
+
+/* Checked State for Container */
+.completion-container.checked {
+    background-color: rgba(0, 255, 135, 0.15);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+/* Hide default checkbox but keep it accessible */
+.completion-container input[type="checkbox"] {
+    accent-color: var(--primary-color);
+    width: 1.2em;
+    height: 1.2em;
+    cursor: pointer;
 }
 
 /* =============================================
@@ -282,7 +311,7 @@ button:active {
 #streakText {
     text-align: center;
     font-size: 1.2em;
-    color: #ff9800; /* Orange for streaks */
+    color: #ff9800;
     font-weight: bold;
     margin-top: 2rem;
 }
@@ -295,15 +324,47 @@ button:active {
     padding: 2rem;
 }
 
+/* Daily Quote Box (Matching Streak Badge) */
+.daily-quote {
+    background-color: var(--surface-color);
+    color: #ff9800; /* Orange text */
+    padding: 5px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    border: 1px solid #ff9800;
+    box-shadow: 0 0 10px rgba(255, 152, 0, 0.2);
+    font-style: italic;
+    white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+    .daily-quote {
+        font-size: 0.8rem;
+        max-width: 60%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+.streak-badge-top {
+    background-color: var(--surface-color);
+    color: #ff9800;
+    padding: 5px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    border: 1px solid #ff9800;
+    box-shadow: 0 0 10px rgba(255, 152, 0, 0.2);
+}
+
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 /* =============================================
    9. Responsive Design
    ============================================= */
 @media (max-width: 900px) {
-    /* Stack the grid on smaller screens */
     .grid-container {
         grid-template-columns: 1fr;
         gap: 20px;
@@ -345,7 +406,6 @@ button:active {
 }
 
 /* ctf_dashboard.css */
-
 .ctf-section {
   background-color: #1e1e1e;
   border: 1px solid #333;
@@ -397,6 +457,7 @@ button:active {
   margin-bottom: 8px;
   list-style-type: none;
 }
+
 /* Dashboard-specific styles */
 .dashboard-header {
     text-align: center;
@@ -428,15 +489,6 @@ button:active {
     border-radius: 20px;
     font-weight: bold;
     font-size: 0.9em;
-}
-
-#monthSelector {
-    background-color: var(--input-bg-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    padding: 8px 12px;
-    border-radius: 5px;
-    font-family: var(--font-family);
 }
 
 /* Calendar Styles */
@@ -481,6 +533,7 @@ button:active {
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--text-color);
 }
 
 .calendar-day.empty {
@@ -488,13 +541,18 @@ button:active {
     cursor: default;
 }
 
+/* ACTIVE STATE - NEON FILL */
 .calendar-day.active {
-    background-color: var(--primary-color);
-    color: var(--bg-color);
+    background-color: var(--primary-color) !important;
+    color: var(--bg-color) !important;
+    box-shadow: 0 0 10px rgba(0, 255, 135, 0.4); /* Neon glow */
+    border: 1px solid var(--primary-color-hover);
+    font-weight: 900;
 }
 
 .calendar-day:not(.empty):not(.active):hover {
     background-color: var(--border-color-light);
+    color: var(--primary-color);
 }
 
 /* Stats Container */
@@ -540,11 +598,11 @@ button:active {
         flex-direction: column;
         gap: 15px;
     }
-    
+
     .stats-container {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .calendar-day {
         padding: 10px;
         min-height: 40px;
@@ -556,4 +614,205 @@ button:active {
     .stats-container {
         grid-template-columns: 1fr;
     }
+}
+
+/* Fix for Card Headers in Dark Mode */
+.card-header {
+    background-color: var(--surface-color-light) !important;
+    color: var(--primary-color) !important;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.card-body {
+    background-color: var(--surface-color);
+    color: var(--text-color);
+}
+
+/* Completed Room Style */
+.completed-text {
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+/* --- VIEW 1: VERTICAL TREE LAYOUT --- */
+.vertical-tree {
+    padding: 20px;
+    text-align: left;
+    max-width: 900px;
+    margin: 0 auto;
+}
+.vertical-tree .tree, .vertical-tree .tree ul, .vertical-tree .tree li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+}
+.vertical-tree .tree ul {
+    margin-left: 20px;
+}
+.vertical-tree .tree li {
+    margin: 0;
+    padding: 5px 0 5px 20px;
+    line-height: 2em;
+    position: relative;
+}
+
+/* Vertical line */
+.vertical-tree .tree li::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    border-left: 1px solid var(--border-color-light);
+}
+
+/* Horizontal line connector */
+.vertical-tree .tree li::after {
+    content: "";
+    position: absolute;
+    top: 1.1em;
+    left: 0;
+    width: 20px;
+    height: 0;
+    border-top: 1px solid var(--border-color-light);
+}
+
+/* Remove vertical line for last child */
+.vertical-tree .tree li:last-child::before {
+    height: 1.1em;
+}
+
+/* --- VIEW 2: HORIZONTAL MIND MAP LAYOUT (LOCKED) --- */
+.mindmap-wrapper {
+    overflow-x: auto;
+    padding: 40px;
+    text-align: center;
+    background-color: var(--surface-color);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    min-height: 600px;
+}
+.tf-tree {
+    font-size: 12px;
+    display: inline-block;
+}
+.tf-tree ul {
+    display: flex;
+    flex-direction: column; /* Force vertical stacking */
+    align-items: center;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    position: relative;
+}
+.tf-tree li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    padding: 20px 0;
+}
+
+/* Vertical Spine Line */
+.tf-tree li::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    border-left: 2px solid var(--border-color-light);
+    z-index: 1;
+}
+/* Hide top line for root */
+.tf-tree > ul > li::before {
+    top: 50%;
+}
+/* Hide bottom line for last child */
+.tf-tree li:last-child::before {
+    bottom: 50%;
+}
+
+.tf-nc {
+    border: 1px solid var(--border-color);
+    padding: 10px 20px;
+    background-color: var(--input-bg-color);
+    border-radius: 5px;
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s;
+    min-width: 150px;
+    margin: 5px 0;
+}
+
+.root-node {
+    background-color: var(--primary-color) !important;
+    color: var(--bg-color) !important;
+    font-weight: 900;
+    font-size: 1.2rem;
+    box-shadow: 0 0 15px var(--primary-color);
+}
+
+.level-node {
+    border-color: #9b59b6 !important; /* Purple */
+    color: #9b59b6 !important; /* Purple */
+    font-weight: 900 !important;
+    background-color: var(--surface-color-light);
+    padding: 15px 30px !important; /* Larger container */
+    font-size: 1.1rem !important; /* Larger text */
+    min-width: 200px !important; /* Wider box */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3); /* Slight elevation */
+}
+
+/* Level styling removed as per user request for unified purple theme */
+
+.room-node {
+    font-size: 0.9rem;
+    border-color: var(--border-color-light);
+}
+.room-node:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px var(--primary-color);
+}
+
+.node-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.node-content a {
+    color: var(--text-color);
+    text-decoration: none;
+}
+.node-content a:hover {
+    color: var(--primary-color);
+}
+
+/* Shared Node Styles */
+.tree span, .mindmap-tree span {
+    border: 1px solid var(--border-color);
+    padding: 5px 12px;
+    text-decoration: none;
+    color: var(--text-color);
+    font-family: var(--font-family);
+    font-size: 13px;
+    display: inline-block;
+    border-radius: 5px;
+    background: var(--surface-color);
+    transition: all 0.3s;
+}
+.tree span a, .mindmap-tree span a {
+    color: var(--text-color);
+    text-decoration: none;
+}
+.tree span:hover, .mindmap-tree span:hover {
+    background: var(--surface-color-light);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px var(--primary-color);
+}
+.tree span:hover a, .mindmap-tree span:hover a {
+    color: var(--primary-color);
 }

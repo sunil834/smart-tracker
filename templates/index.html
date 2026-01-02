@@ -1,77 +1,123 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Tracker</title>
+{% extends "base.html" %}
+
+{% block title %}Smart Tracker{% endblock %}
+
+{% block container_type %}container-fluid{% endblock %}
+
+{% block head_extra %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <div class="nav-links">
-        <a href="/dashboard">📊 Dashboard</a> |
-        <a href="/progress">📘 Progress</a> |
-        <a href="/tracker">📅 Tracker</a> |
-        <a href="/ctf">🐞 CTF</a>
+    <style>
+        /* Expand Home Page Container */
+        .home-wide-container {
+            max-width: 1400px !important;
+            padding-left: 40px !important;
+            padding-right: 40px !important;
+            margin: 20px auto;
+            background-color: var(--surface-color);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 135, 0.1);
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Ensure the outer main container also expands */
+        main.container-fluid {
+            max-width: 1400px !important;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        /* Adjust streak badge to stay aligned to the new width */
+        .streak-container-top {
+            max-width: 1400px !important;
+            margin: 0 auto !important;
+            padding: 0 40px !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- Streak Badge ABOVE the main box -->
+    <div class="d-flex justify-content-between align-items-center mb-2 streak-container-top">
+        <span id="daily-quote" class="daily-quote"></span>
+        <div id="streak-badge" class="streak-badge-top hidden">
+            🔥 0 Day Streak
+        </div>
     </div>
 
-    <div class="container">
-        <h1>What's on your mind🤪</h1>
-        <div id="streak-badge" class="hidden"></div>
-
-        <div class="header">
-            <input type="text" id="calendar" placeholder="Select a date...">
+    <div class="home-wide-container">
+        <h1 class="mb-4 text-center">Welcome back, {{ current_user.username }}! 🚀</h1>        <div class="header">
+            <input type="text" id="calendar" placeholder="Select a date..." class="form-control theme-input">
         </div>
 
         <div id="daily-log">
-            <h2>🗓️ Today's Log - <span id="current-date"></span></h2>
+            <h2 class="mt-4 text-center">🗓️ Today's Log - <span id="current-date"></span></h2>
 
-            <!-- Python Section -->
             <div class="task-section">
                 <h3>🐍 Python Practice</h3>
-                <input type="text" id="python-task" class="task-input" placeholder="What Python skill did you practice?">
-                <button class="ai-button" data-topic="Python">💡 Get AI Suggestion</button>
-                <button class="suggest-today-button" data-topic="Python">📌 What should I learn today?</button>
-                <input type="checkbox" class="completion-checkbox"> Mark as completed
-                <input type="text" class="extra-topic" placeholder="➕ Extra topic learned? (optional)">
+                <textarea id="python-task" class="task-input theme-input auto-grow" placeholder="What Python skill did you practice?" rows="1"></textarea>
+                <div class="button-group mt-2 d-flex align-items-center">
+                    <button class="ai-button" data-topic="Python">💡 Get AI Suggestion</button>
+                    <button class="suggest-today-button" data-topic="Python">📌 What should I learn today?</button>
+                    <div class="completion-container ms-auto mt-0" onclick="toggleCompletion(this)">
+                        <input type="checkbox" class="completion-checkbox"> <label class="mb-0" style="cursor: pointer;">Mark as completed</label>
+                    </div>
+                </div>
+                <textarea class="extra-topic theme-input mt-2 auto-grow" placeholder="➕ Extra topic learned? (optional)" rows="1"></textarea>
             </div>
 
-            <!-- HTB Section -->
             <div class="task-section">
                 <h3>🧠 Hack The Box / CTF</h3>
-                <input type="text" id="htb-task" class="task-input" placeholder="Which challenge did you solve?">
-                <button class="ai-button" data-topic="Hack The Box">💡 Get AI Suggestion</button>
-                <button class="suggest-today-button" data-topic="Hack The Box">📌 What should I learn today?</button>
-                <input type="checkbox" class="completion-checkbox"> Mark as completed
-                <input type="text" class="extra-topic" placeholder="➕ Extra topic learned? (optional)">
+                <textarea id="htb-task" class="task-input theme-input auto-grow" placeholder="Which challenge did you solve?" rows="1"></textarea>
+                <div class="button-group mt-2 d-flex align-items-center">
+                    <button class="ai-button" data-topic="Hack The Box">💡 Get AI Suggestion</button>
+                    <button class="suggest-today-button" data-topic="Hack The Box">📌 What should I learn today?</button>
+                    <div class="completion-container ms-auto mt-0" onclick="toggleCompletion(this)">
+                        <input type="checkbox" class="completion-checkbox"> <label class="mb-0" style="cursor: pointer;">Mark as completed</label>
+                    </div>
+                </div>
+                <textarea class="extra-topic theme-input mt-2 auto-grow" placeholder="➕ Extra topic learned? (optional)" rows="1"></textarea>
             </div>
 
-            <!-- OTW Section -->
             <div class="task-section">
                 <h3>💻 OverTheWire / Shell Practice</h3>
-                <input type="text" id="otw-task" class="task-input" placeholder="What wargame did you attempt?">
-                <button class="ai-button" data-topic="Linux & Shell">💡 Get AI Suggestion</button>
-                <button class="suggest-today-button" data-topic="Linux & Shell">📌 What should I learn today?</button>
-                <input type="checkbox" class="completion-checkbox"> Mark as completed
-                <input type="text" class="extra-topic" placeholder="➕ Extra topic learned? (optional)">
+                <textarea id="otw-task" class="task-input theme-input auto-grow" placeholder="What wargame did you attempt?" rows="1"></textarea>
+                <div class="button-group mt-2 d-flex align-items-center">
+                    <button class="ai-button" data-topic="Linux & Shell">💡 Get AI Suggestion</button>
+                    <button class="suggest-today-button" data-topic="Linux & Shell">📌 What should I learn today?</button>
+                    <div class="completion-container ms-auto mt-0" onclick="toggleCompletion(this)">
+                        <input type="checkbox" class="completion-checkbox"> <label class="mb-0" style="cursor: pointer;">Mark as completed</label>
+                    </div>
+                </div>
+                <textarea class="extra-topic theme-input mt-2 auto-grow" placeholder="➕ Extra topic learned? (optional)" rows="1"></textarea>
             </div>
 
             <!-- Suggestion Box -->
-            <div id="ai-suggestion-box" class="hidden">
+            <div id="ai-suggestion-box" class="task-section hidden" style="border-left-color: #ff9800;">
                 <h4>🤖 AI Recommends:</h4>
                 <p id="ai-suggestion-text"></p>
             </div>
 
             <!-- Notes -->
-            <h3>📝 Notes / Key Learnings</h3>
-            <textarea id="notes" placeholder="Add links, commands, ideas, or personal reflections..."></textarea>
+            <h3 class="mt-4">📝 Notes / Key Learnings</h3>
+            <textarea id="notes" class="theme-input auto-grow" placeholder="Add links, commands, ideas, or personal reflections..." rows="1"></textarea>
 
-            <button id="save-log-btn">💾 Save My Progress</button>
-            <p id="status-message"></p>
+            <button id="save-log-btn" class="btn btn-primary mt-3">💾 Save My Progress</button>
+            <p id="status-message" class="status-message"></p>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="{{ url_for('static', filename='tracker.js') }}"></script>
-</body>
-</html>
+    <style>
+        .theme-input {
+            background-color: var(--input-bg-color) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        .theme-input:focus {
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 8px rgba(0, 255, 135, 0.2) !important;
+        }
+    </style>
+{% endblock %}
