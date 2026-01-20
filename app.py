@@ -28,13 +28,18 @@ if not app.debug:
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-this-in-prod')
 
 # Step 2: Fix for Render/PostgreSQL connection strings
-# This ensures compatibility with SQLAlchemy 1.4+ which requires 'postgresql://'
 uri = os.getenv('DATABASE_URL')
 if uri and uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# --- ADD THIS BLOCK HERE ---
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "pool_pre_ping": True,  # This detects the "closed unexpectedly" error and reconnects automatically
+    "pool_recycle": 300,    # Refreshes connections every 5 mins to keep them fresh
+}
 
 # Initialize extensions
 db.init_app(app)
