@@ -26,7 +26,14 @@ if not app.debug:
 
 # Security Config
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-this-in-prod')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+
+# Step 2: Fix for Render/PostgreSQL connection strings
+# This ensures compatibility with SQLAlchemy 1.4+ which requires 'postgresql://'
+uri = os.getenv('DATABASE_URL')
+if uri and uri.startswith("postgres://"):
+    uri = uri.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize extensions
@@ -49,11 +56,11 @@ limiter = Limiter(
 def not_found_error(error):
     return render_template('404.html'), 404
 
-@app.errorhandler(500)
-def internal_error(error):
-    db.session.rollback() # Ensure DB session is clean
-    app.logger.error(f"Server Error: {error}")
-    return render_template('500.html'), 500
+# @app.errorhandler(500)
+# def internal_error(error):
+#     db.session.rollback() # Ensure DB session is clean
+#     app.logger.error(f"Server Error: {error}")
+#     return render_template('500.html'), 500
 
 # --- Login Manager Loader ---
 @login_manager.user_loader
