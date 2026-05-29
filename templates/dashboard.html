@@ -157,7 +157,15 @@
       <p class="hero-subtitle">Visualize streak velocity, workload distribution, and daily execution signals.</p>
     </div>
     <div class="hero-metrics">
-      <div id="currentStreakBadge" class="streak-badge">{{ streak_display_text }}</div>
+      <div id="currentStreakBadge" class="streak-badge">
+        {% if streak_badge_name %}
+          {{ streak_badge_emoji }} {{ streak_badge_name }}
+        {% elif streak_milestone_label %}
+          Next tier · {{ streak_milestone_label }}
+        {% else %}
+          Streak status
+        {% endif %}
+      </div>
       <div id="currentMonthDisplay" class="month-chip">Loading...</div>
     </div>
   </section>
@@ -263,13 +271,12 @@
           document.getElementById('longestStreakStat').innerText = data.longestStreak;
           document.getElementById('totalActiveDays').innerText = data.dates.length;
           document.getElementById('thisMonthDays').innerText = data.thisMonth; // Fixed: Now updating from backend
-          const streakTierText = data.badge_name ? `${data.badge_emoji || ''} ${data.badge_name}`.trim() : `${data.currentStreak} day${data.currentStreak === 1 ? '' : 's'} streak`;
-          const streakBadgeText = data.milestone_label ? `${streakTierText} · ${data.milestone_label}` : `${streakTierText} · ${data.currentStreak} day${data.currentStreak === 1 ? '' : 's'} streak`;
+          const streakBadgeText = data.badge_name
+            ? `${data.badge_emoji || ''} ${data.badge_name}`.trim()
+            : data.milestone_label
+              ? `Next tier · ${data.milestone_label}`
+              : 'Streak status';
           document.getElementById('currentStreakBadge').innerText = streakBadgeText;
-          const headerStreakValue = document.getElementById('headerStreakValue');
-          if (headerStreakValue) {
-            headerStreakValue.innerText = streakBadgeText;
-          }
 
           // Create heatmap
           createActivityHeatmap(data.activityByDate || {}, new Set(data.dates || []));

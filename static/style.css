@@ -1599,6 +1599,10 @@ form label {
         top: 52px;
         z-index: 101;
     }
+    .mobile-nav-menu .nav-milestones--mobile,
+    .mobile-nav-menu .account-links--mobile {
+        display: flex;
+    }
 }
 
 @media (max-width: 720px) {
