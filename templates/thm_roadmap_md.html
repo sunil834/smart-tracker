@@ -1,0 +1,97 @@
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="alert neon-alert mb-4">
+            <strong>Note:</strong> This is the raw Roadmap documentation sourced from <code>thmfreerooms.md</code> and <code>thm.md</code>.
+        </div>
+
+        <!-- PART 1: The Ultimate Guide (thmfreerooms.md) -->
+        <div class="card mb-5" style="background-color: var(--surface-color); border: 1px solid var(--border-color);">
+            <div class="card-header border-bottom border-secondary">
+                <h2 class="h4 mb-0 text-white">The Ultimate Guide for Beginners</h2>
+            </div>
+            <div class="card-body text-start">
+                <h3 class="h5 text-success mt-3">1. Beginner Level Rooms</h3>
+                <p class="text-muted">Perfect for those new to cybersecurity, these rooms help users understand foundational concepts in a hands-on environment.</p>
+                <ul class="list-unstyled ms-3">
+                    <li class="mb-2"><strong class="text-light">Introduction to Cyber Security</strong>: Beginner-friendly intro covering key principles.</li>
+                    <li class="mb-2"><strong class="text-light">Linux Fundamentals (Part 1, 2, 3)</strong>: Essential commands and functions of Linux.</li>
+                    <li class="mb-2"><strong class="text-light">Intro to Defensive Security</strong>: Basic defensive measures and secure environment setup.</li>
+                    <li class="mb-2"><strong class="text-light">Phishing Emails</strong>: Identifying phishing attacks and malicious links.</li>
+                    <li class="mb-2"><strong class="text-light">Network Fundamentals</strong>: Basics of networking, IP addresses, protocols.</li>
+                </ul>
+
+                <h3 class="h5 text-success mt-4">2. Intermediate Level Rooms</h3>
+                <p class="text-muted">After understanding the basics, these rooms help build essential skills for ethical hacking and network security.</p>
+                <ul class="list-unstyled ms-3">
+                    <li class="mb-2"><strong class="text-light">Pre-Security Path</strong>: Foundational layers before in-depth content.</li>
+                    <li class="mb-2"><strong class="text-light">Introduction to Web Hacking</strong>: SQL Injection, XSS, CSRF.</li>
+                    <li class="mb-2"><strong class="text-light">OWASP Top 10</strong>: Common web application vulnerabilities.</li>
+                    <li class="mb-2"><strong class="text-light">Hash Cracking</strong>: Password cracking with Hashcat and John the Ripper.</li>
+                    <li class="mb-2"><strong class="text-light">File Inclusion</strong>: Spotting and exploiting file inclusion vulnerabilities.</li>
+                </ul>
+
+                <h3 class="h5 text-success mt-4">3. Advanced Level Rooms</h3>
+                <p class="text-muted">For those ready to tackle complex vulnerabilities and comprehensive penetration testing.</p>
+                <ul class="list-unstyled ms-3">
+                    <li class="mb-2"><strong class="text-light">Red Teaming Fundamentals</strong>: Emulating adversary tactics.</li>
+                    <li class="mb-2"><strong class="text-light">Pivoting</strong>: Lateral movement within networks.</li>
+                    <li class="mb-2"><strong class="text-light">Privilege Escalation</strong>: Exploiting vulnerabilities to escalate privileges (Linux/Windows).</li>
+                    <li class="mb-2"><strong class="text-light">Active Directory Basics</strong>: Attacking and securing AD infrastructures.</li>
+                    <li class="mb-2"><strong class="text-light">Binary Exploitation</strong>: Buffer overflows and reverse engineering.</li>
+                </ul>
+
+                <h3 class="h5 text-success mt-4">4. Capture the Flag (CTF) Challenges</h3>
+                <ul class="list-unstyled ms-3">
+                    <li class="mb-2"><strong class="text-light">Pickle Rick</strong>: Rick and Morty themed web exploitation.</li>
+                    <li class="mb-2"><strong class="text-light">RootMe</strong>: Gain initial access and escalate privileges.</li>
+                    <li class="mb-2"><strong class="text-light">Blue</strong>: Exploiting EternalBlue.</li>
+                    <li class="mb-2"><strong class="text-light">Mr. Robot</strong>: Storyline-driven CTF based on the show.</li>
+                    <li class="mb-2"><strong class="text-light">Ice</strong>: Enumeration and exploitation focus.</li>
+                </ul>
+
+                <h3 class="h5 text-success mt-4">5. Topic-Specific Rooms</h3>
+                <ul class="list-unstyled ms-3">
+                    <li class="mb-2"><strong class="text-light">Burp Suite Basics</strong>: Essential tool for web testing.</li>
+                    <li class="mb-2"><strong class="text-light">Metasploit Basics</strong>: Using the Metasploit Framework.</li>
+                    <li class="mb-2"><strong class="text-light">Malware Analysis</strong>: Intro to analyzing malware behavior.</li>
+                    <li class="mb-2"><strong class="text-light">Wireshark Basics</strong>: Packet analysis basics.</li>
+                    <li class="mb-2"><strong class="text-light">Steganography CTFs</strong>: Hiding messages within files.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- PART 2: Comprehensive Room List (thm.md) -->
+        <div class="card mb-4" style="background-color: var(--surface-color); border: 1px solid var(--border-color);">
+            <div class="card-header border-bottom border-secondary">
+                <h2 class="h4 mb-0 text-white">Full Room Repository (350+ Rooms)</h2>
+            </div>
+            <div class="card-body text-start">
+                <p class="text-muted mb-4">A comprehensive list of free rooms organized by topic.</p>
+
+                <!-- I will iterate the same pdf_tree_data here but render it as a simple DOCUMENT list -->
+                {% for category, rooms in pdf_tree_data %}
+                <div class="mb-4">
+                    <h4 class="h6 text-primary border-bottom border-dark pb-2 mb-3">{{ category }}</h4>
+                    <ul class="list-group list-group-flush ps-2" style="border-left: 2px solid var(--border-color-light);">
+                        {% for id, title in rooms %}
+                        <li class="list-group-item bg-transparent text-muted py-1 border-0">
+                            <a href="https://tryhackme.com/room/{{ id }}" target="_blank" class="text-decoration-none hover-white">
+                                {{ title }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .hover-white:hover {
+        color: #fff !important;
+        text-decoration: underline !important;
+    }
+</style>

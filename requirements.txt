@@ -1,0 +1,16 @@
+Flask
+google-generativeai
+python-dotenv
+gunicorn
+Flask-SQLAlchemy
+psycopg2-binary
+flask-login
+flask-migrate
+flask-wtf
+wtforms
+email-validator
+# Redis is used for distributed rate limiting and async AI job state.
+flask-limiter
+redis
+
+# NOTE: This file is kept minimal. Use `uv sync` to manage the locked environment.

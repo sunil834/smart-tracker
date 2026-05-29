@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Tracker{% endblock %}
+
+{% block container_type %}container-fluid{% endblock %}
+
+{% block head_extra %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block content %}
+    <div class="linear-page">
+        <div class="ambient ambient-1" aria-hidden="true"></div>
+        <div class="ambient ambient-2" aria-hidden="true"></div>
+        <div class="ambient ambient-3" aria-hidden="true"></div>
+
+        <section class="hero-panel hero-panel--compact">
+            <div class="hero-aside">
+                <div class="metric-card">
+                    <span class="metric-label">Daily quote</span>
+                    <span id="daily-quote" class="metric-value"></span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Streak</span>
+                    <div id="streak-badge" class="streak-badge-top hidden">
+                        <span class="streak-icon" aria-hidden="true"></span>
+                        <span>0 Day Streak</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="workspace-grid">
+            <aside class="sidebar-panel glass-panel">
+                <div class="panel-head">
+                    <span class="panel-kicker">Session controls</span>
+                    <h2>Log your current day</h2>
+                    <p class="muted">Choose a date, capture notes, and save the current session when you’re done.</p>
+                </div>
+
+                <div class="workspace-control-card">
+                    <label class="field-label" for="calendar">Date</label>
+                    <input type="text" id="calendar" placeholder="Select a date..." class="form-control theme-input calendar-input">
+                    <div class="current-date">Active: <span id="current-date"></span></div>
+
+                    <div class="topic-composer {% if not current_user.is_authenticated %}hidden{% endif %}">
+                        <label class="field-label" for="new-topic-name">New topic</label>
+                        <div class="input-inline">
+                            <input id="new-topic-name" class="form-control theme-input" placeholder="e.g. Python">
+                            <button id="create-topic-btn" class="primary-action">Add topic</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ai-suggestion-shell glass-panel hidden" id="ai-suggestion-box">
+                    <span class="panel-kicker">AI recommendation</span>
+                    <p id="ai-suggestion-text"></p>
+                </div>
+
+                <div class="notes-panel linear-notes">
+                    <div class="panel-head compact">
+                        <span class="panel-kicker">Notes</span>
+                        <h3>Key learnings</h3>
+                    </div>
+                    <textarea id="notes" class="theme-input auto-grow" placeholder="Add links, commands, ideas, or reflections..." rows="1"></textarea>
+                </div>
+
+                <div class="log-footer linear-footer">
+                    <button id="save-log-btn" class="primary-action">Save progress</button>
+                    <p id="status-message" class="status-message"></p>
+                </div>
+            </aside>
+
+            <main class="content-panel">
+                <div class="panel-head">
+                    <span class="panel-kicker">Daily log</span>
+                    <h2>Workspace entries</h2>
+                    <p class="muted">Each topic is rendered from the database and saved as a structured daily entry.</p>
+                </div>
+
+                <div id="daily-log" class="topic-grid">
+                    {% if current_user.is_authenticated %}
+                        {% if topics and topics|length > 0 %}
+                            {% for topic in topics %}
+                                <article class="task-section topic-card" data-topic-name="{{ topic.name }}" data-topic-id="{{ topic.id }}">
+                                    <div class="task-head">
+                                        <div>
+                                            <p class="panel-kicker">Topic</p>
+                                            <h3 class="task-title">{{ topic.name }}</h3>
+                                        </div>
+                                        <div class="completion-container" onclick="toggleCompletion(this)">
+                                            <input type="checkbox" class="completion-checkbox" aria-label="Mark {{ topic.name }} task complete">
+                                            <span class="completion-pill">Complete</span>
+                                        </div>
+                                    </div>
+                                    <textarea class="task-input theme-input auto-grow" placeholder="What {{ topic.name }} did you practice?" rows="1"></textarea>
+                                    <div class="task-actions">
+                                        <button class="ai-button" data-topic="{{ topic.name }}">Get AI suggestion</button>
+                                        <button class="suggest-today-button" data-topic="{{ topic.name }}">What should I learn today?</button>
+                                        <button class="delete-topic-button" data-topic-id="{{ topic.id }}" data-topic-name="{{ topic.name }}">Delete topic</button>
+                                    </div>
+                                    <textarea class="extra-topic theme-input mt-2 auto-grow" placeholder="Extra topic learned? (optional)" rows="1"></textarea>
+                                </article>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state glass-panel">
+                                <p class="panel-kicker">No topics yet</p>
+                                <h3>Add your first topic to start logging</h3>
+                                <p class="muted">Create a custom topic from the sidebar, then return here to capture your progress.</p>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <article class="task-section topic-card">
+                            <div class="task-head">
+                                <div>
+                                    <p class="panel-kicker">Fallback topic</p>
+                                    <h3 class="task-title">Python Scripting</h3>
+                                    <p class="task-subtitle">Automations, parsers, exploit helpers.</p>
+                                </div>
+                                <div class="completion-container" onclick="toggleCompletion(this)">
+                                    <input type="checkbox" class="completion-checkbox" aria-label="Mark Python task complete">
+                                    <span class="completion-pill">Complete</span>
+                                </div>
+                            </div>
+                            <textarea class="task-input theme-input auto-grow" placeholder="What Python skill did you practice?" rows="1"></textarea>
+                            <div class="task-actions">
+                                <button class="ai-button" data-topic="Python">Get AI suggestion</button>
+                                <button class="suggest-today-button" data-topic="Python">What should I learn today?</button>
+                            </div>
+                            <textarea class="extra-topic theme-input mt-2 auto-grow" placeholder="Extra topic learned? (optional)" rows="1"></textarea>
+                        </article>
+                    {% endif %}
+                </div>
+            </main>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="{{ url_for('static', filename='tracker.js') }}"></script>
+{% endblock %}

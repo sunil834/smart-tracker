@@ -1,0 +1,187 @@
+{% set pdf_tree_data = [
+    ('Level 1 - Getting Started', [
+        ('careersincyber', 'Careers in Cyber'), ('introtooffensivesecurity', 'Intro to Offensive Security'),
+        ('offensivepentesting', 'Introduction to Offensive Pentesting'), ('linuxfundamentalspart1', 'Linux Fundamentals 1'),
+        ('ohsint', 'OHsint')
+    ], []),
+    
+    ('Level 2 - Tooling', [
+        ('nmap01', 'Nmap Live Host Discovery'), ('hydra', 'Hydra'), ('linuxprivesc', 'Linux PrivEsc'),
+        ('learnowaspzap', 'Introduction to OWASP ZAP'), ('metasploitintro', 'Metasploit: Introduction')
+    ], [
+        ('vulnversity', 'Vulnversity'), ('blue', 'Blue'), ('easyctf', 'Simple CTF'),
+        ('cowboyhacker', 'Bounty Hacker'), ('bruteit', 'Brute It')
+    ]),
+
+    ('Level 3 - Crypto & Hashes', [
+        ('crackthehash', 'Crack the Hash'), ('agentsudoctf', 'Agent Sudo'), ('thecodcaper', 'The Cod Caper'),
+        ('lazyadmin', 'Lazy Admin'), ('encryptioncrypto101', 'Encryption - Crypto 101')
+    ], []),
+
+    ('Level 4 - Web', [
+        ('howwebsiteswork', 'How Websites Work'), ('puttingitalltogether', 'Putting it all together'),
+        ('sqlinjectionlm', 'SQL Injection'), ('dnsindetail', 'DNS in Detail'), ('httpindetail', 'HTTP in Detail'),
+        ('owaspjuiceshop', 'OWASP Juice Shop'), ('overpass', 'Overpass'), ('bolt', 'Bolt'),
+        ('takeover', 'Takeover'), ('corridor', 'Corridor')
+    ], []),
+
+    ('Level 5 - Reverse Engineering', [
+        ('windowsreversingintro', 'Windows Reversing Intro'), ('basicmalwarere', 'Basic Malware RE'),
+        ('reverself', 'Reversing ELF'), ('dumpingrouterfirmware', 'Dumping Router Firmware'),
+        ('dissectingpeheaders', 'Dissecting PE Headers')
+    ], []),
+
+    ('Level 6 - Networking', [
+        ('whatisnetworking', 'What is Networking?'), ('introtonetworking', 'Introduction to Networking'),
+        ('networkservices', 'Network Services'), ('networkservices2', 'Network Services 2'),
+        ('passiverecon', 'Passive Reconnaissance'), ('activerecon', 'Active Reconnaissance'),
+        ('furthernmap', 'Nmap'), ('trafficanalysisessentials', 'Traffic Analysis Essentials'), ('snort', 'Snort')
+    ], []),
+
+    ('Level 7 - Privilege Escalation', [
+        ('linuxprivesc', 'Linux Privilege Escalation'), ('windows10privesc', 'Windows PrivEsc'),
+        ('linuxprivescarena', 'Linux PrivEsc Arena'), ('windowsprivescarena', 'Windows Privesc Arena'),
+        ('sudovulnssamedit', 'Sudo Security Bypass'), ('sudovulnsbof', 'Sudo Buffer Overflow'),
+        ('blaster', 'Blaster'), ('ignite', 'Ignite'), ('kenobi', 'Kenobi')
+    ], [
+        ('c4ptur3th3fl4g', 'C4ptur3-th3-Fl4g'), ('picklerick', 'Pickle Rick')
+    ]),
+
+    ('Level 8 - CTF Practice', [], [], {
+        'Easy': [
+            ('breakoutthecage1', 'Break Out The Cage'), ('lianyu', 'Lian Yu'), ('b3dr0ck', 'B3dr0ck'), ('startup', 'Startup')
+        ],
+        'Medium': [
+            ('vulnnet1', 'VulnNet: Active'), ('bufferoverflowprep', 'Buffer Overflow Prep'),
+            ('dogcat', 'Dogcat'), ('eavesdropper', 'Eavesdropper'), ('ollie', 'Ollie')
+        ]
+    }),
+
+    ('Level 9 - Windows', [
+        ('windowsfundamentals2', 'Windows Fundamentals 2'), ('windowsfundamentals3', 'Windows Fundamentals 3'),
+        ('activedirectorybasics', 'Active Directory Basics')
+    ], [
+        ('blue', 'Blue'), ('attacktivedirectory', 'Attacktive Directory'), ('retro', 'Retro'),
+        ('blueprint', 'Blueprint'), ('anthem', 'Anthem'), ('relevant', 'Relevant'),
+        ('windowsforensics1', 'Windows Forensics 1'), ('localpotato', 'LocalPotato'), ('printnightmare', 'PrintNightmare, Thrice!')
+    ])
+] %}
+
+<div class="mindmap-wrapper">
+    
+    <!-- Progress Header -->
+    <div class="mb-4 p-3 border rounded text-start" style="background: var(--surface-color); max-width: 800px; margin: 0 auto;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="m-0 text-white">Path Progress</h5>
+            <span class="badge bg-dark border border-success" id="mindmap-progress-text" style="color: var(--primary-color);">Completed 0 / 0 rooms</span>
+        </div>
+        <div class="progress" style="height: 20px; background-color: var(--input-bg-color);">
+            <div id="mindmap-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%">0%</div>
+        </div>
+    </div>
+
+    <div class="tf-tree">
+        <ul>
+            <li>
+                <span class="tf-nc root-node">🚀 TryHackMe Start</span>
+                <ul>
+                    {% for item in pdf_tree_data %}
+                        <!-- Handle Standard Levels vs Special Case Level 8 -->
+                        {% if item|length == 4 %}
+                            {% set level_name = item[0] %}
+                            {% set subcategories = item[3] %}
+                            <li>
+                                <span class="tf-nc level-node level-{{ loop.index }}">{{ level_name }}</span>
+                                <ul>
+                                    {% for sub_name, rooms in subcategories.items() %}
+                                    <li>
+                                        <span class="tf-nc sub-node">{{ sub_name }}</span>
+                                        <ul>
+                                            {% for id, title in rooms %}
+                                            <li>
+                                                <span class="tf-nc room-node">
+                                                    <div class="node-content">
+                                                        <input type="checkbox" class="room-checkbox form-check-input mb-1" 
+                                                               data-room-id="{{ id }}" 
+                                                               {% if id in completed_rooms %}checked{% endif %}
+                                                               style="margin: 0;">
+                                                        <a href="https://tryhackme.com/room/{{ id }}" target="_blank">{{ title }}</a>
+                                                    </div>
+                                                </span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        {% else %}
+                            {% set level_name = item[0] %}
+                            {% set learning_rooms = item[1] %}
+                            {% set ctf_rooms = item[2] %}
+                            <li>
+                                <span class="tf-nc level-node level-{{ loop.index }}">{{ level_name }}</span>
+                                <ul>
+                                    <!-- Branch 1: Learning Rooms -->
+                                    {% if learning_rooms %}
+                                    <li>
+                                        <span class="tf-nc sub-node">Learning Rooms</span>
+                                        <ul>
+                                            {% for id, title in learning_rooms %}
+                                            <li>
+                                                <span class="tf-nc room-node">
+                                                    <div class="node-content">
+                                                        <input type="checkbox" class="room-checkbox form-check-input mb-1" 
+                                                               data-room-id="{{ id }}" 
+                                                               {% if id in completed_rooms %}checked{% endif %}
+                                                               style="margin: 0;">
+                                                        <a href="https://tryhackme.com/room/{{ id }}" target="_blank">{{ title }}</a>
+                                                    </div>
+                                                </span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </li>
+                                    {% endif %}
+
+                                    <!-- Branch 2: CTF Practice -->
+                                    {% if ctf_rooms %}
+                                    <li>
+                                        <span class="tf-nc sub-node ctf-branch">CTF Practice</span>
+                                        <ul>
+                                            {% for id, title in ctf_rooms %}
+                                            <li>
+                                                <span class="tf-nc room-node">
+                                                    <div class="node-content">
+                                                        <input type="checkbox" class="room-checkbox form-check-input mb-1" 
+                                                               data-room-id="{{ id }}" 
+                                                               {% if id in completed_rooms %}checked{% endif %}
+                                                               style="margin: 0;">
+                                                        <a href="https://tryhackme.com/room/{{ id }}" target="_blank">{{ title }}</a>
+                                                    </div>
+                                                </span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<style>
+    /* Styling for the sub-nodes (Learning/CTF/Easy/Medium branches) */
+    .sub-node {
+        background-color: var(--surface-color);
+        border: 1px dashed #ff9800 !important;
+        color: #ff9800 !important;
+        font-weight: bold;
+        font-size: 0.95rem;
+    }
+</style>

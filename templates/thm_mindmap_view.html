@@ -1,0 +1,31 @@
+<div class="mindmap-wrapper">
+    <div class="tf-tree">
+        <ul>
+            <li>
+                <span class="tf-nc root-node">🚀 TryHackMe Start</span>
+                <ul>
+                    {% for level_name, rooms in pdf_tree_data %}
+                    <li>
+                        <span class="tf-nc level-node">{{ level_name }}</span>
+                        <ul>
+                            {% for id, title in rooms %}
+                            <li>
+                                <span class="tf-nc room-node">
+                                    <div class="node-content">
+                                        <input type="checkbox" class="room-checkbox form-check-input mb-1" 
+                                               data-room-id="{{ id }}" 
+                                               {% if id in completed_rooms %}checked{% endif %}
+                                               style="margin: 0;">
+                                        <a href="https://tryhackme.com/room/{{ id }}" target="_blank">{{ title }}</a>
+                                    </div>
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </li>
+        </ul>
+    </div>
+</div>

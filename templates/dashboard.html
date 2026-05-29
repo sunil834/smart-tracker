@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block head_extra %}
+{% endblock %}
+
+{% block content %}
+  <style>
+    .heatmap-shell {
+      position: relative;
+      overflow-x: auto;
+    }
+
+    .heatmap-scroll {
+      min-width: 760px;
+    }
+
+    .heatmap-legend {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+      color: var(--text-color-secondary);
+      font-size: 0.85rem;
+    }
+
+    .heatmap-key {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      display: inline-block;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .heatmap-tooltip {
+      z-index: 50;
+      pointer-events: none;
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      background: rgba(13, 17, 23, 0.96);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+      font-size: 0.82rem;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .heatmap-tooltip.hidden {
+      display: none !important;
+    }
+
+    .heatmap-rect {
+      transition: stroke 0.12s ease, opacity 0.12s ease, fill 0.12s ease;
+      cursor: default;
+    }
+
+    .heatmap-rect:hover {
+      stroke: var(--primary-color);
+      stroke-width: 1.5;
+      opacity: 0.94;
+    }
+
+    .dashboard-skeleton-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 0.8fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .skeleton-card {
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+      padding: 1.1rem;
+      position: relative;
+      overflow: hidden;
+      min-height: 170px;
+    }
+
+    .skeleton-card.tall {
+      min-height: 220px;
+    }
+
+    .skeleton-line,
+    .skeleton-block,
+    .skeleton-stat {
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .skeleton-line {
+      height: 12px;
+      margin-bottom: 0.7rem;
+      width: 72%;
+    }
+
+    .skeleton-line.short {
+      width: 42%;
+    }
+
+    .skeleton-block {
+      height: 112px;
+      margin-top: 0.9rem;
+      border-radius: 12px;
+    }
+
+    .skeleton-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.85rem;
+    }
+
+    .skeleton-stat {
+      height: 64px;
+      border-radius: 12px;
+    }
+
+    .skeleton-line::after,
+    .skeleton-block::after,
+    .skeleton-stat::after,
+    .skeleton-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(100deg, rgba(255, 255, 255, 0) 20%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0) 80%);
+      transform: translateX(-100%);
+      animation: dashboard-skeleton-shimmer 1.2s ease-in-out infinite;
+    }
+
+    .skeleton-card::after {
+      inset: -30% -20%;
+    }
+
+    @keyframes dashboard-skeleton-shimmer {
+      100% {
+        transform: translateX(100%);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-skeleton-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <section class="dashboard-hero">
+    <div>
+      <p class="eyebrow">Analytics Matrix</p>
+      <h1>Operational Momentum</h1>
+      <p class="hero-subtitle">Visualize streak velocity, workload distribution, and daily execution signals.</p>
+    </div>
+    <div class="hero-metrics">
+      <div id="currentStreakBadge" class="streak-badge">Current Streak: - days</div>
+      <div id="currentMonthDisplay" class="month-chip">Loading...</div>
+    </div>
+  </section>
+
+  <div id="dashboard-content" class="matrix-grid">
+    <div class="glass-panel calendar-panel">
+      <div class="panel-head">
+        <h3>52-Week Activity Heatmap</h3>
+        <p class="muted">Each square shows daily task intensity over the last 52 weeks.</p>
+      </div>
+      <div class="heatmap-shell">
+        <div class="heatmap-scroll">
+          <svg id="activityHeatmap" width="100%" height="150" viewBox="0 0 1100 150" role="img" aria-label="52 week activity heatmap"></svg>
+        </div>
+        <div id="heatmapTooltip" class="heatmap-tooltip hidden"></div>
+      </div>
+      <div class="heatmap-legend">
+        <span>Less</span>
+        <span class="heatmap-key" style="background:#1F2937"></span>
+        <span class="heatmap-key" style="background:#0E4429"></span>
+        <span class="heatmap-key" style="background:#006D32"></span>
+        <span class="heatmap-key" style="background:#39D353"></span>
+        <span>More</span>
+      </div>
+    </div>
+
+    <div class="glass-panel stats-panel">
+      <div class="panel-head">
+        <h3>Signal Summary</h3>
+        <p class="muted">Live roll-up from analytics.</p>
+      </div>
+      <div id="analytics-metrics-grid" class="stats-container">
+        <div class="stat-card">
+          <div class="stat-number" id="currentStreakStat">-</div>
+          <div class="stat-label">Current Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="longestStreakStat">-</div>
+          <div class="stat-label">Longest Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="totalActiveDays">-</div>
+          <div class="stat-label">Total Active Days</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="thisMonthDays">0</div>
+          <div class="stat-label">This Month</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+    <div id="dashboard-skeleton" class="dashboard-skeleton-grid" aria-hidden="true">
+      <div class="skeleton-card tall">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+        <div class="skeleton-block"></div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+        <div class="skeleton-stats">
+          <div class="skeleton-stat"></div>
+          <div class="skeleton-stat"></div>
+          <div class="skeleton-stat"></div>
+          <div class="skeleton-stat"></div>
+        </div>
+      </div>
+      <div class="skeleton-card" style="grid-column: 1 / -1;">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+        <div class="skeleton-block"></div>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <div id="error-state" class="status-message hidden">Failed to load data. Please try again later.</div>
+
+    <script>
+      const HEATMAP_COLORS = ['#1F2937', '#0E4429', '#006D32', '#39D353'];
+
+      // Self-invoking async function to use await
+      (async () => {
+        const dashboardContent = document.getElementById('dashboard-content');
+        const dashboardSkeleton = document.getElementById('dashboard-skeleton');
+        const errorState = document.getElementById('error-state');
+
+        // Hide content, show skeleton screen
+        dashboardContent.classList.add('hidden');
+        dashboardSkeleton.classList.remove('hidden');
+        errorState.classList.add('hidden');
+
+        try {
+          const response = await fetch('/analytics_data');
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+
+          // Update stats
+          document.getElementById('currentStreakStat').innerText = data.currentStreak;
+          document.getElementById('longestStreakStat').innerText = data.longestStreak;
+          document.getElementById('totalActiveDays').innerText = data.dates.length;
+          document.getElementById('thisMonthDays').innerText = data.thisMonth; // Fixed: Now updating from backend
+          document.getElementById('currentStreakBadge').innerText = `Current Streak: ${data.currentStreak} days`;
+          const headerStreakValue = document.getElementById('headerStreakValue');
+          if (headerStreakValue) {
+            headerStreakValue.innerText = data.currentStreak;
+          }
+
+          // Create heatmap
+          createActivityHeatmap(data.activityByDate || {}, new Set(data.dates || []));
+
+          // Set current month text
+          const now = new Date();
+          const options = { month: 'long', year: 'numeric' };
+          document.getElementById('currentMonthDisplay').innerText = now.toLocaleDateString('en-US', options);
+
+          // Show content, hide skeleton screen
+          dashboardContent.classList.remove('hidden');
+          dashboardSkeleton.classList.add('hidden');
+
+        } catch (error) {
+          console.error('Error fetching analytics data:', error);
+          errorState.classList.remove('hidden');
+          dashboardSkeleton.classList.add('hidden');
+        }
+      })();
+
+      function createActivityHeatmap(activityByDate, loggedDates = new Set()) {
+        const svg = document.getElementById('activityHeatmap');
+        const tooltip = document.getElementById('heatmapTooltip');
+        const cellSize = 14;
+        const cellGap = 4;
+        const weeks = 52;
+        const daysPerWeek = 7;
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() - (weeks * 7 - 1));
+        startDate.setHours(0, 0, 0, 0);
+
+        const width = weeks * (cellSize + cellGap) + 80;
+        const height = daysPerWeek * (cellSize + cellGap) + 40;
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        svg.innerHTML = '';
+
+        const ns = 'http://www.w3.org/2000/svg';
+        const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        dayLabels.forEach((label, index) => {
+          if (index % 2 === 1) return;
+          const text = document.createElementNS(ns, 'text');
+          text.setAttribute('x', '0');
+          text.setAttribute('y', 28 + index * (cellSize + cellGap));
+          text.setAttribute('fill', 'var(--text-color-secondary)');
+          text.setAttribute('font-size', '10');
+          text.textContent = label;
+          svg.appendChild(text);
+        });
+
+        const monthLabelSet = new Set();
+
+        for (let i = 0; i < weeks * 7; i++) {
+          const date = new Date(startDate);
+          date.setDate(startDate.getDate() + i);
+          const dayOfWeek = date.getDay();
+          const weekIndex = Math.floor(i / 7);
+          const x = 36 + weekIndex * (cellSize + cellGap);
+          const y = 14 + dayOfWeek * (cellSize + cellGap);
+          const dateKey = date.toISOString().slice(0, 10);
+          const count = Number(activityByDate[dateKey] || 0);
+          const hasLog = loggedDates.has(dateKey);
+          const visualCount = hasLog ? Math.max(count, 1) : count;
+          const fill = visualCount === 0 ? HEATMAP_COLORS[0] : visualCount === 1 ? HEATMAP_COLORS[1] : visualCount === 2 ? HEATMAP_COLORS[2] : HEATMAP_COLORS[3];
+
+          if (date.getDate() <= 7 && !monthLabelSet.has(`${date.getFullYear()}-${date.getMonth()}`)) {
+            monthLabelSet.add(`${date.getFullYear()}-${date.getMonth()}`);
+            const monthText = document.createElementNS(ns, 'text');
+            monthText.setAttribute('x', String(x));
+            monthText.setAttribute('y', '10');
+            monthText.setAttribute('fill', 'var(--text-color-secondary)');
+            monthText.setAttribute('font-size', '10');
+            monthText.textContent = date.toLocaleDateString('en-US', { month: 'short' });
+            svg.appendChild(monthText);
+          }
+
+          const rect = document.createElementNS(ns, 'rect');
+          rect.setAttribute('x', String(x));
+          rect.setAttribute('y', String(y));
+          rect.setAttribute('width', String(cellSize));
+          rect.setAttribute('height', String(cellSize));
+          rect.setAttribute('rx', '3');
+          rect.setAttribute('fill', fill);
+          rect.setAttribute('class', 'heatmap-rect');
+          rect.dataset.date = dateKey;
+          rect.dataset.count = String(count);
+
+          rect.addEventListener('mouseenter', (event) => {
+            tooltip.textContent = hasLog && count === 0
+              ? `Logged day on ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+              : `${count} task${count === 1 ? '' : 's'} on ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+            tooltip.classList.remove('hidden');
+            positionTooltip(rect);
+          });
+          rect.addEventListener('mouseleave', () => tooltip.classList.add('hidden'));
+
+          svg.appendChild(rect);
+        }
+
+        function positionTooltip(targetRect) {
+          const bounds = targetRect.getBoundingClientRect();
+          const tooltipHeight = tooltip.offsetHeight || 0;
+          const shellBounds = tooltip.parentElement.getBoundingClientRect();
+          tooltip.style.left = `${bounds.left - shellBounds.left + bounds.width / 2}px`;
+          tooltip.style.top = `${Math.max(8, bounds.top - shellBounds.top - tooltipHeight - 8)}px`;
+        }
+      }
+    </script>
+{% endblock %}
