@@ -108,7 +108,17 @@
 
             const setOpen = (open) => {
                 toggle.setAttribute('aria-expanded', String(open));
-                menu.hidden = !open;
+                if (open) {
+                    menu.removeAttribute('hidden');
+                    // Small delay so the browser registers the element before animating
+                    requestAnimationFrame(() => menu.classList.add('is-open'));
+                } else {
+                    menu.classList.remove('is-open');
+                    // Wait for transition to finish before hiding
+                    menu.addEventListener('transitionend', () => {
+                        if (!menu.classList.contains('is-open')) menu.setAttribute('hidden', '');
+                    }, { once: true });
+                }
                 document.body.classList.toggle('mobile-nav-open', open);
             };
 
