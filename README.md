@@ -1,53 +1,82 @@
-# Smart Tracker
+﻿# 🧠 Smart Tracker
 
-Smart Tracker is a Flask app for logging daily learning tasks, tracking streaks, and getting AI-powered next-step suggestions.
+**Smart Tracker** is a robust, AI-assisted learning and task-tracking dashboard built with Flask. It helps developers, hackers, and students log their daily progress, maintain learning streaks, and receive context-aware next steps powered by Google's Gemini AI.
 
-## Features
-- Daily task logging with notes
-- Progress and streak analytics
-- AI suggestions powered by Gemini
-- Optional Redis-backed rate limiting and async AI jobs
+## ✨ Key Features
 
-## Tech Stack
-- Flask + Flask-Login
-- SQLAlchemy + Flask-Migrate
-- PostgreSQL (via `DATABASE_URL`)
-- Redis (optional, for rate limiting and AI job state)
-- Google Generative AI (Gemini)
+- **Daily Progress Logging**: Log your completed tasks, notes, and tags in a timeline-style archive with a clean UI.
+- **Streak & Analytics Engine**: Visualize your activity, longest/current streaks, and monthly counts. Earn milestones and badges (from 🌱 Seedling to 🌟 Legend).
+- **🤖 AI-Powered Mentor (Gemini)**: Get actionable, difficulty-tailored next steps based on your specific learning history (e.g., Python, CTFs, Linux).
+- **Topic Management**: Create customizable learning tracks, set targets, and track granular history over time.
+- **Async & Scalable**: Uses Redis for distributed rate-limiting and asynchronous AI job execution to keep the UI snappy.
+- **Secure User Auth**: Built-in registration, login, and profile management using Flask-Login and Werkzeug security.
 
-## Setup (using `uv`)
-1. Create and activate a virtual environment.
-2. Install dependencies with `uv` (uses the active environment's lockfile):
+## 🛠️ Tech Stack
 
-```bash
-uv sync
-```
+- **Backend**: Python, Flask, SQLAlchemy, Flask-Migrate
+- **Database**: PostgreSQL (via DATABASE_URL)
+- **Caching/State**: Redis (for API rate-limiting via lask-limiter and async AI jobs)
+- **AI Integration**: Google Generative AI (Gemini Flash)
+- **Frontend**: HTML5, custom CSS (modern dark-themed UI), vanilla JavaScript
+- **Package Manager**: [uv](https://github.com/astral-sh/uv)
 
-3. Configure environment variables (example `.env`):
+## 🚀 Getting Started
 
-```bash
-SECRET_KEY=change-me
-DATABASE_URL=postgresql://user:pass@host:5432/dbname
-GEMINI_API_KEY=your-key
-REDIS_URL=redis://localhost:6379/0
-AI_WORKER_THREADS=4
-```
+### Prerequisites
+- Python 3.10+
+- [uv](https://github.com/astral-sh/uv) installed
+- PostgreSQL database
+- Redis server (local or cloud)
+- [Google Gemini API Key](https://aistudio.google.com/app/apikey)
 
-## Run
-Start the app with `uv run`:
+### Installation & Setup
 
-```bash
-uv run -- python app.py
-```
+1. **Clone the repository:**
+   `ash
+   git clone https://github.com/sunil834/smart-tracker.git
+   cd smart-tracker
+   `
 
-The app runs on `http://localhost:5000` by default.
+2. **Install dependencies:**
+   Fast installation using the uv package manager:
+   `ash
+   uv sync
+   `
 
-## Git
-After reviewing changes, commit and push to GitHub:
+3. **Environment Configuration:**
+   Create a .env file in the root directory:
+   `env
+   SECRET_KEY=your-super-secret-key
+   DATABASE_URL=postgresql://user:password@localhost:5432/smart_tracker
+   GEMINI_API_KEY=your-gemini-api-key
+   REDIS_URL=redis://localhost:6379/0
+   AI_WORKER_THREADS=4
+   `
 
-```bash
-git add -A
-git commit -m "Remove scripts folder; update README to use uv"
-git push origin main
-```
+4. **Initialize the Database:**
+   Apply the latest schema migrations:
+   `ash
+   uv run -- flask db upgrade
+   `
+   *(Note: The app also attempts to lazily bootstrap tables on the first run via db.create_all())*
 
+5. **Run the Application:**
+   `ash
+   uv run -- python app.py
+   `
+   
+The app will be available at http://localhost:5000.
+
+## 📂 Project Structure
+
+- pp.py: Main Flask application, route definitions, and Redis-backed AI job runner.
+- models.py: SQLAlchemy database models (User, DailyLog, TopicHistory, Badge, etc.).
+- gemini.py: Integration with Google Generative AI for tailored learning suggestions.
+- 	emplates/ & static/: Jinja2 templates and modern CSS/JS for the responsive dashboard frontend.
+- migrations/: Alembic directory for database schema tracking.
+
+## 🤝 Contributing
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/sunil834/smart-tracker/issues).
+
+## 📝 License
+This project is licensed under the MIT License.
