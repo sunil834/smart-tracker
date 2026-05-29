@@ -122,7 +122,10 @@
                 document.body.classList.toggle('mobile-nav-open', open);
             };
 
-            toggle.addEventListener('click', () => setOpen(menu.hidden));
+            toggle.addEventListener('click', () => {
+                const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+                setOpen(!isOpen);
+            });
 
             menu.querySelectorAll('a').forEach((link) => {
                 link.addEventListener('click', () => setOpen(false));
