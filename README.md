@@ -44,13 +44,15 @@ An intelligent learning and progress tracker with AI-powered suggestions. Track 
    pip install -r requirements.txt
    ```
 
-3. **Set up environment variables:**
-   Create a `.env` file in the project root:
+3. **Environment Configuration:**
+   Create a .env file in the root directory:
    ```env
-   SECRET_KEY=your-secret-key-here
-   DATABASE_URL=postgresql://user:password@localhost/smart_tracker_db
-   REDIS_URL=redis://localhost:6379/0
+   SECRET_KEY=your-super-secret-key
+   DATABASE_URL=postgresql://user:password@localhost:5432/smart_tracker
    GEMINI_API_KEY=your-gemini-api-key
+   # Optional: enables Redis-backed rate limiting and AI job storage.
+   # If omitted, the app falls back to in-memory storage.
+   REDIS_URL=redis://localhost:6379/0
    AI_WORKER_THREADS=4
    ```
 
