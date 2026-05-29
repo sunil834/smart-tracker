@@ -7,6 +7,7 @@ import logging
 from datetime import datetime, date
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
+from typing import Any
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from flask_migrate import Migrate
 from flask_login import (
@@ -68,37 +69,51 @@ with app.app_context():
     except Exception as exc:
         app.logger.warning("Database bootstrap skipped: %s", exc)
 
-# Prefer Redis for distributed rate-limiting (useful with Gunicorn multiple workers)
-redis_url = (
-    os.environ.get("REDIS_URL")
-    or os.environ.get("REDIS_URI")
-    or "redis://localhost:6379/0"
-)
+# Prefer Redis for distributed rate-limiting when it is configured and reachable.
+redis_url = os.environ.get("REDIS_URL") or os.environ.get("REDIS_URI")
+limiter_storage_uri = "memory://"
+if redis_url:
+    try:
+        redis.Redis.from_url(redis_url, decode_responses=True).ping()
+        limiter_storage_uri = redis_url
+    except Exception:
+        app.logger.warning(
+            "Redis unavailable for rate limiting; using in-memory fallback."
+        )
+else:
+    app.logger.info("REDIS_URL not set; using in-memory rate limiting.")
 limiter = Limiter(
     get_remote_address,
     app=app,
     default_limits=["2000 per day", "500 per hour"],
-    storage_uri=redis_url,
+    storage_uri=limiter_storage_uri,
 )
 
 # Async AI job execution state
-try:
-    ai_job_store = redis.Redis.from_url(redis_url, decode_responses=True)
-    ai_job_store.ping()
-except Exception:
-    ai_job_store = None
-    app.logger.warning("Redis unavailable for AI jobs; using local in-memory fallback.")
+ai_job_store: redis.Redis | None = None
+ai_job_redis_url = redis_url or ""
+if ai_job_redis_url:
+    try:
+        ai_job_store = redis.Redis.from_url(ai_job_redis_url, decode_responses=True)
+        ai_job_store.ping()
+    except Exception:
+        ai_job_store = None
+        app.logger.warning(
+            "Redis unavailable for AI jobs; using local in-memory fallback."
+        )
+else:
+    app.logger.info("REDIS_URL not set; using in-memory AI job storage.")
 
 ai_job_executor = ThreadPoolExecutor(
     max_workers=int(os.environ.get("AI_WORKER_THREADS", "4"))
 )
 ai_job_lock = Lock()
-ai_job_cache = {}
+ai_job_cache: dict[str, dict[str, Any]] = {}
 ai_job_ttl_seconds = 10 * 60
 
 
 BADGE_TIERS = [
-    {"key": "seedling", "emoji": "🌱", "name": "Seedling", "min": 1},
+    {"key": "seedling", "emoji": "🌱", "name": "Seedling", "min": 3},
     {"key": "on_fire", "emoji": "🔥", "name": "On Fire", "min": 7},
     {"key": "momentum", "emoji": "⚡", "name": "Momentum", "min": 15},
     {"key": "moonshot", "emoji": "🚀", "name": "Moonshot", "min": 30},
@@ -176,6 +191,79 @@ def _calculate_streak_summary(user_id):
         "logs": logs,
         "longest_streak": longest_streak,
         "current_streak": current_streak,
+    }
+
+
+def _format_streak_display(current_streak, badge, milestone):
+    if current_streak <= 0:
+        return "0 days streak"
+
+    tier_label = " ".join(
+        part for part in (badge["emoji"], badge["name"]) if part
+    ).strip()
+    streak_label = (
+        milestone or f"{current_streak} day{'s' if current_streak != 1 else ''} streak"
+    )
+
+    if tier_label:
+        return f"{tier_label} · {streak_label}"
+    return streak_label
+
+
+def _next_badge_tier(current_streak):
+    for tier in BADGE_TIERS:
+        if current_streak < tier["min"]:
+            return {
+                "key": tier["key"],
+                "emoji": tier["emoji"],
+                "name": tier["name"],
+                "min": tier["min"],
+                "days_left": tier["min"] - current_streak,
+            }
+    return None
+
+
+def _streak_progress_percent(current_streak):
+    next_tier = _next_badge_tier(current_streak)
+    if not next_tier:
+        return 100
+
+    previous_min = 0
+    for tier in BADGE_TIERS:
+        if tier["min"] < next_tier["min"] and current_streak >= tier["min"]:
+            previous_min = tier["min"]
+
+    span = max(next_tier["min"] - previous_min, 1)
+    progress = int(((current_streak - previous_min) / span) * 100)
+    return max(0, min(progress, 100))
+
+
+@app.context_processor
+def inject_streak_context():
+    current_streak = 0
+
+    if current_user.is_authenticated:
+        try:
+            current_streak = _calculate_streak_summary(current_user.id)[
+                "current_streak"
+            ]
+        except Exception as exc:
+            app.logger.warning("Could not load streak context: %s", exc)
+
+    badge = get_badge(current_streak)
+    milestone = milestone_label(current_streak)
+    next_tier = _next_badge_tier(current_streak)
+    return {
+        "current_streak": current_streak,
+        "streak_badge_tier": badge["key"],
+        "streak_badge_emoji": badge["emoji"],
+        "streak_badge_name": badge["name"],
+        "streak_milestone_label": milestone,
+        "streak_display_text": _format_streak_display(current_streak, badge, milestone),
+        "streak_next_tier_name": next_tier["name"] if next_tier else None,
+        "streak_next_tier_emoji": next_tier["emoji"] if next_tier else None,
+        "streak_next_tier_days_left": next_tier["days_left"] if next_tier else None,
+        "streak_progress_percent": _streak_progress_percent(current_streak),
     }
 
 

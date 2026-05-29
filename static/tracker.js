@@ -484,6 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getNextMilestone(streak) {
         const milestones = [
+            {at: 3, name: 'Seedling'},
             {at: 7, name: 'On Fire'},
             {at: 15, name: 'Momentum'},
             {at: 30, name: 'Moonshot'},
@@ -505,17 +506,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 const emoji = data.badge_emoji || '';
                 const name  = data.badge_name  || '';
                 const label = data.milestone_label;
-                let mainText = label ? `${emoji} ${name} · ${label}` : `${emoji} ${name} · ${n} day${n !== 1 ? 's' : ''}`;
+                const tierText = name ? `${emoji} ${name}`.trim() : `${n} day${n !== 1 ? 's' : ''} streak`;
+                const streakText = label ? `${tierText} · ${label}` : tierText;
+                const next = getNextMilestone(n);
 
                 const streakBadge = document.getElementById('streak-badge');
-                if (streakBadge) streakBadge.textContent = mainText;
+                if (streakBadge) {
+                    const valueEl = streakBadge.querySelector('.streak-badge-value');
+                    const metaEl = streakBadge.querySelector('.streak-badge-meta');
+                    if (valueEl) {
+                        valueEl.textContent = streakText;
+                    } else {
+                        streakBadge.textContent = streakText;
+                    }
+                    if (metaEl) {
+                        metaEl.textContent = next ? `Next: ${next.name} in ${next.daysLeft} day${next.daysLeft !== 1 ? 's' : ''}` : 'Legend unlocked';
+                    }
+                    streakBadge.classList.remove('hidden');
+                }
 
                 const headerVal = document.getElementById('headerStreakValue');
-                if (headerVal) headerVal.textContent = n;
+                if (headerVal) headerVal.textContent = streakText;
 
                 const subLabel = document.getElementById('streak-sublabel');
                 if (subLabel) {
-                    const next = getNextMilestone(n);
                     subLabel.textContent = next ? `Next: ${next.name} in ${next.daysLeft} day${next.daysLeft !== 1 ? 's' : ''}` : 'Max tier reached · Legend 🌟';
                 }
             });

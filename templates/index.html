@@ -21,10 +21,22 @@
                     <span id="daily-quote" class="metric-value"></span>
                 </div>
                 <div class="metric-card">
-                    <span class="metric-label">Streak</span>
-                    <div id="streak-badge" class="streak-badge-top hidden">
+                    <span class="metric-label">Tier track</span>
+                    <div id="streak-badge" class="streak-badge-top streak-badge-track {% if not current_user.is_authenticated %}hidden{% endif %}">
                         <span class="streak-icon" aria-hidden="true"></span>
-                        <span>0 Day Streak</span>
+                        <div class="streak-track-copy">
+                            <span class="streak-badge-value">{{ streak_display_text }}</span>
+                            <span class="streak-badge-meta">
+                                {% if streak_next_tier_name %}
+                                    Next: {{ streak_next_tier_name }} in {{ streak_next_tier_days_left }} day{{ 's' if streak_next_tier_days_left != 1 else '' }}
+                                {% else %}
+                                    Legend unlocked
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="streak-track-bar" aria-hidden="true">
+                            <span style="width: {{ streak_progress_percent }}%"></span>
+                        </div>
                     </div>
                 </div>
             </div>
