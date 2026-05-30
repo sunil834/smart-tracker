@@ -69,19 +69,27 @@ with app.app_context():
     except Exception as exc:
         app.logger.warning("Database bootstrap skipped: %s", exc)
 
-# Prefer Redis for distributed rate-limiting when it is configured and reachable.
+# Prefer in-memory rate limiting by default so local development does not depend
+# on Redis DNS/network availability. Set LIMITER_STORAGE_URI explicitly to use Redis.
 redis_url = os.environ.get("REDIS_URL") or os.environ.get("REDIS_URI")
-limiter_storage_uri = "memory://"
-if redis_url:
+limiter_storage_uri = os.environ.get("LIMITER_STORAGE_URI", "memory://")
+if limiter_storage_uri == "memory://":
+    app.logger.info("Using in-memory rate limiting.")
+elif limiter_storage_uri.startswith("redis://") or limiter_storage_uri.startswith(
+    "rediss://"
+):
     try:
-        redis.Redis.from_url(redis_url, decode_responses=True).ping()
-        limiter_storage_uri = redis_url
+        redis.Redis.from_url(limiter_storage_uri, decode_responses=True).ping()
     except Exception:
         app.logger.warning(
-            "Redis unavailable for rate limiting; using in-memory fallback."
+            "Redis unavailable for rate limiting; falling back to in-memory storage."
         )
+        limiter_storage_uri = "memory://"
 else:
-    app.logger.info("REDIS_URL not set; using in-memory rate limiting.")
+    app.logger.warning(
+        "Unsupported LIMITER_STORAGE_URI provided; falling back to in-memory storage."
+    )
+    limiter_storage_uri = "memory://"
 limiter = Limiter(
     get_remote_address,
     app=app,
@@ -450,18 +458,7 @@ def profile():
 # --- Main Page & Tracker Routes ---
 @app.route("/")
 def index():
-    # Provide user's topics to the frontend so sections render dynamically
-    topics = []
-    if current_user.is_authenticated:
-        try:
-            topics = (
-                Topic.query.filter_by(user_id=current_user.id)
-                .order_by(Topic.name.asc())
-                .all()
-            )
-        except SQLAlchemyError as exc:
-            app.logger.warning("Topic table unavailable on index: %s", exc)
-    return render_template("index.html", topics=topics)
+    return render_template("index.html")
 
 
 @app.route("/topics", methods=["GET", "POST"])

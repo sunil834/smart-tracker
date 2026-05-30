@@ -91,57 +91,11 @@
                 </div>
 
                 <div id="daily-log" class="topic-grid">
-                    {% if current_user.is_authenticated %}
-                        {% if topics and topics|length > 0 %}
-                            {% for topic in topics %}
-                                <article class="task-section topic-card" data-topic-name="{{ topic.name }}" data-topic-id="{{ topic.id }}">
-                                    <div class="task-head">
-                                        <div>
-                                            <p class="panel-kicker">Topic</p>
-                                            <h3 class="task-title">{{ topic.name }}</h3>
-                                        </div>
-                                        <div class="completion-container" onclick="toggleCompletion(this)">
-                                            <input type="checkbox" class="completion-checkbox" aria-label="Mark {{ topic.name }} task complete">
-                                            <span class="completion-pill">Complete</span>
-                                        </div>
-                                    </div>
-                                    <textarea class="task-input theme-input auto-grow" placeholder="What {{ topic.name }} did you practice?" rows="1"></textarea>
-                                    <div class="task-actions">
-                                        <button class="ai-button" data-topic="{{ topic.name }}">Get AI suggestion</button>
-                                        <button class="suggest-today-button" data-topic="{{ topic.name }}">What should I learn today?</button>
-                                        <button class="delete-topic-button" data-topic-id="{{ topic.id }}" data-topic-name="{{ topic.name }}">Delete topic</button>
-                                    </div>
-                                    <textarea class="extra-topic theme-input mt-2 auto-grow" placeholder="Extra topic learned? (optional)" rows="1"></textarea>
-                                </article>
-                            {% endfor %}
-                        {% else %}
-                            <div class="empty-state glass-panel">
-                                <p class="panel-kicker">No topics yet</p>
-                                <h3>Add your first topic to start logging</h3>
-                                <p class="muted">Create a custom topic from the sidebar, then return here to capture your progress.</p>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <article class="task-section topic-card">
-                            <div class="task-head">
-                                <div>
-                                    <p class="panel-kicker">Fallback topic</p>
-                                    <h3 class="task-title">Python Scripting</h3>
-                                    <p class="task-subtitle">Automations, parsers, exploit helpers.</p>
-                                </div>
-                                <div class="completion-container" onclick="toggleCompletion(this)">
-                                    <input type="checkbox" class="completion-checkbox" aria-label="Mark Python task complete">
-                                    <span class="completion-pill">Complete</span>
-                                </div>
-                            </div>
-                            <textarea class="task-input theme-input auto-grow" placeholder="What Python skill did you practice?" rows="1"></textarea>
-                            <div class="task-actions">
-                                <button class="ai-button" data-topic="Python">Get AI suggestion</button>
-                                <button class="suggest-today-button" data-topic="Python">What should I learn today?</button>
-                            </div>
-                            <textarea class="extra-topic theme-input mt-2 auto-grow" placeholder="Extra topic learned? (optional)" rows="1"></textarea>
-                        </article>
-                    {% endif %}
+                    <div id="daily-log-empty" class="empty-state glass-panel">
+                        <p class="panel-kicker">No topics for this day yet</p>
+                        <h3>Add a topic for the selected date</h3>
+                        <p class="muted">Use the topic field in the sidebar to add what you worked on today, or switch the calendar to view a different day.</p>
+                    </div>
                 </div>
             </main>
         </section>

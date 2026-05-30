@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     {% block head_extra %}{% endblock %}
 </head>
-<body>
+<body data-authenticated="{{ 'true' if current_user.is_authenticated else 'false' }}">
     <header class="top-header">
         <div class="top-header__inner">
             <a class="brand" href="{{ url_for('index') }}">
